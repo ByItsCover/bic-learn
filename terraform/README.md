@@ -31,10 +31,10 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS Region | `string` | n/a | yes |
+| <a name="input_batch_gpus"></a> [batch\_gpus](#input\_batch\_gpus) | Number of GPUs for batch job | `number` | `1` | no |
 | <a name="input_batch_memory"></a> [batch\_memory](#input\_batch\_memory) | Memory size for batch job | `number` | `512` | no |
 | <a name="input_batch_vcpu"></a> [batch\_vcpu](#input\_batch\_vcpu) | VCPU count for batch job | `number` | `1` | no |
 | <a name="input_bic_infra_workspace"></a> [bic\_infra\_workspace](#input\_bic\_infra\_workspace) | Terraform Cloud Workspace BIC-Infra name | `string` | n/a | yes |
-| <a name="input_dotnet_env"></a> [dotnet\_env](#input\_dotnet\_env) | The ASPNETCORE\_ENVIRONMENT for the AWS batch container | `string` | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | Deployment Environment | `string` | n/a | yes |
 | <a name="input_full_train_frequency"></a> [full\_train\_frequency](#input\_full\_train\_frequency) | The cron schedule frequency at which the full train job should run | `string` | n/a | yes |
 | <a name="input_max_duration"></a> [max\_duration](#input\_max\_duration) | Maximum duration for batch task, after which will be terminated | `number` | `3600` | no |
