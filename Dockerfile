@@ -1,7 +1,7 @@
 # Build Stage
 
 ARG PYTHON_VERSION=3.13
-ARG DISTROLESS_PYTHON=python3-debian13
+ARG DISTROLESS_PY=python3-debian13
 ARG FUNCTION_DIR="/app/function/"
 
 FROM python:${PYTHON_VERSION}-slim AS build
@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt --target ${FUNCTION_DIR}
 
 # Deploy Stage
 
-FROM gcr.io/distroless/${DISTROLESS_PYTHON} AS deploy
+FROM gcr.io/distroless/${DISTROLESS_PY} AS deploy
 
 ARG FUNCTION_DIR
 
