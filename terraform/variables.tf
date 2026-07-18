@@ -25,11 +25,6 @@ variable "bic_infra_workspace" {
 
 # Batch
 
-variable "dotnet_env" {
-  type        = string
-  description = "The ASPNETCORE_ENVIRONMENT for the AWS batch container"
-}
-
 variable "max_duration" {
   type        = number
   description = "Maximum duration for batch task, after which will be terminated"
@@ -46,6 +41,12 @@ variable "batch_memory" {
   type        = number
   description = "Memory size for batch job"
   default     = 512
+}
+
+variable "batch_gpus" {
+  type        = number
+  description = "Number of GPUs for batch job"
+  default     = 1
 }
 
 # EventBridge
