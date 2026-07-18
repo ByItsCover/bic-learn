@@ -25,8 +25,8 @@ resource "aws_scheduler_schedule" "full-train-schedule" {
       "ContainerOverrides" : {
         "Environment" : [
           {
-            "name" : "JOB_TYPE",
-            "value" : "full_train"
+            "Name" : "JOB_TYPE",
+            "Value" : "full_train"
           }
         ]
       }
