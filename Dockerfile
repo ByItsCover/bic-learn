@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     g++ \
     make \
     cmake \
-    unzip
+    unzip \
+    libcurl4-openssl-dev
 
 ARG FUNCTION_DIR
 
