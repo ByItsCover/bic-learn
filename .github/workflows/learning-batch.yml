@@ -1,0 +1,46 @@
+name: learning-batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobName:
+        description: 'Job Name'
+        required: true
+        type: string
+      jobType:
+        description: 'Learning Job Type'
+        required: true
+        default: 'full_train'
+        type: choice
+        options:
+          - full_train
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  submit-batch:
+    name: Submit Batch Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials for github actions
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
+
+      - name: Submit Job
+        run: |
+          aws batch submit-job \
+              --job-name ${{ inputs.jobName }}-${{ github.run_id }} \
+              --job-queue learning-queue \
+              --job-definition learning_batch_job_definition \
+              --container-overrides '{
+                "environment": []
+              }'
