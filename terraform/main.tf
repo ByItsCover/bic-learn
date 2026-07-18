@@ -21,6 +21,10 @@ resource "aws_batch_job_definition" "job" {
       {
         type  = "MEMORY"
         value = tostring(var.batch_memory)
+      },
+      {
+        type  = "GPU"
+        value = tostring(var.batch_gpus)
       }
     ]
 
