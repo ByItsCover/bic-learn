@@ -42,5 +42,10 @@ jobs:
               --job-queue learning-queue \
               --job-definition learning_batch_job_definition \
               --container-overrides '{
-                "environment": []
+                "environment": [
+                  {
+                    "name": "JOB_TYPE",
+                    "value": "${{ inputs.jobType }}"
+                  }
+                ]
               }'
