@@ -1,5 +1,5 @@
 aws_region  = "us-east-2"
-environment = "prod"
+environment = "PROD"
 
 bic_infra_workspace = "bic-infra-prod"
 
