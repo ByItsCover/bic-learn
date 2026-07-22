@@ -2,6 +2,8 @@ locals {
   ecs_execution_role_arn = data.terraform_remote_state.bic_infra.outputs.ecs_execution_role_arn
   s3_db_uri              = data.terraform_remote_state.bic_infra.outputs.s3_db_uri
   hardcover_secret_arn   = data.terraform_remote_state.bic_infra.outputs.hardcover_secret_arn
+  rec_efs_system_id      = data.terraform_remote_state.bic_infra.outputs.rec_efs_system_id
+  rec_efs_access_id      = data.terraform_remote_state.bic_infra.outputs.rec_efs_access_id
 }
 
 
@@ -25,6 +27,28 @@ resource "aws_batch_job_definition" "job" {
       {
         type  = "GPU"
         value = tostring(var.batch_gpus)
+      }
+    ]
+
+    volumes = [
+      {
+        name = "recVolume"
+        efs_volume_configuration = {
+          file_system_id          = local.rec_efs_system_id
+          transit_encryption      = "ENABLED"
+          authorization_config    = {
+            access_point_id = local.rec_efs_access_id
+            iam             = "ENABLED"
+          }
+        }
+      }
+    ]
+
+    mountPoints = [
+      {
+        sourceVolume  = "recVolume"
+        containerPath = "/mount/efs"
+        readOnly      = false
       }
     ]
 
