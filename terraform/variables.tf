@@ -49,6 +49,18 @@ variable "batch_gpus" {
   default     = 1
 }
 
+variable "efs_volume_name" {
+  type = string
+  description = "Name of EFS volume attached to batch instance"
+  default = "recVolume"
+}
+
+variable "efs_path" {
+  type = string
+  description = "File path for EFS attached to batch instance"
+  default = "/mount/efs"
+}
+
 # EventBridge
 
 variable "full_train_frequency" {
