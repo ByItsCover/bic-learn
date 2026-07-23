@@ -71,7 +71,7 @@ resource "aws_batch_job_definition" "job" {
       },
       {
         name  = "TOWER_DIM"
-        value = var.batch_tower_dim
+        value = tostring(var.batch_tower_dim)
       }
     ]
 
