@@ -49,6 +49,12 @@ variable "batch_gpus" {
   default     = 1
 }
 
+variable "batch_tower_dim" {
+  type        = number
+  description = "Number of dimensions for two tower model output"
+  default     = 64
+}
+
 variable "efs_volume_name" {
   type = string
   description = "Name of EFS volume attached to batch instance"
