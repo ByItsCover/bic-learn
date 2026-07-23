@@ -56,15 +56,15 @@ variable "batch_tower_dim" {
 }
 
 variable "efs_volume_name" {
-  type = string
+  type        = string
   description = "Name of EFS volume attached to batch instance"
-  default = "recVolume"
+  default     = "recVolume"
 }
 
 variable "efs_path" {
-  type = string
+  type        = string
   description = "File path for EFS attached to batch instance"
-  default = "/mount/efs"
+  default     = "/mount/efs"
 }
 
 # EventBridge
