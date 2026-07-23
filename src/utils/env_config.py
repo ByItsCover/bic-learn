@@ -4,7 +4,6 @@
 
 import argparse
 import os
-from enum import Enum
 
 
 class EnvDefault(argparse.Action):
@@ -19,19 +18,3 @@ class EnvDefault(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
-
-class Environments(str, Enum):
-    development = "Development"
-    prod = "PROD"
-
-class JobType(str, Enum):
-    full_train = "full_train"
-
-def parse_args(args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--env', action=EnvDefault, envvar='ENVIRONMENT', type=Environments, choices=list(Environments))
-    parser.add_argument('--job_type', action=EnvDefault, envvar='JOB_TYPE', type=JobType, choices=list(JobType))
-    parser.add_argument('--db_uri', action=EnvDefault, envvar='DB_URI')
-    parser.add_argument('--hardcover_token', action=EnvDefault, envvar='HARDCOVER_TOKEN', required=False)
-
-    return parser.parse_args(args)

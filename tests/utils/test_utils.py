@@ -1,12 +1,14 @@
 import pytest
 import argparse
-from src.utils import parse_args
+from src.utils.arg_utils import parse_args
 
 
 def test_parse_args(monkeypatch):
     monkeypatch.setenv('ENVIRONMENT', 'Development')
     monkeypatch.setenv('JOB_TYPE', 'full_train')
     monkeypatch.setenv('DB_URI', 'https://www.google.com/')
+    monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
+    monkeypatch.setenv('TOWER_DIM', '64')
 
     params = parse_args([])
     assert params.env == 'Development'
@@ -18,6 +20,8 @@ def test_parse_args_type_exception(monkeypatch):
     monkeypatch.setenv('ENVIRONMENT', 'Development')
     monkeypatch.setenv('JOB_TYPE', 'random_job')
     monkeypatch.setenv('DB_URI', 'https://www.google.com/')
+    monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
+    monkeypatch.setenv('TOWER_DIM', '64')
 
     with pytest.raises(SystemExit) as excinfo:
         _ = parse_args([])
@@ -31,6 +35,19 @@ def test_parse_args_type_exception(monkeypatch):
     # Environment missmatch
     monkeypatch.setenv('JOB_TYPE', 'full_train')
     monkeypatch.setenv('ENVIRONMENT', 'random_env')
+
+    with pytest.raises(SystemExit) as excinfo:
+        _ = parse_args([])
+
+        assert isinstance(excinfo.value, SystemExit)
+        arg_exception = excinfo.value.__context__
+        assert isinstance(arg_exception, argparse.ArgumentError)
+        value_exception = arg_exception.__context__
+        assert isinstance(value_exception, ValueError)
+
+    # Tower Dim integer type missmatch
+    monkeypatch.setenv('ENVIRONMENT', 'Development')
+    monkeypatch.setenv('TOWER_DIM', 'not_a_number')
 
     with pytest.raises(SystemExit) as excinfo:
         _ = parse_args([])

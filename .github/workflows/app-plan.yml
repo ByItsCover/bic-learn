@@ -28,7 +28,7 @@ jobs:
 
       - name: Test with pytest
         id: test
-        run: python -m pytest --tb=short tests/
+        run: pytest --tb=short tests/
 
   tf-plan:
     name: Terraform plan

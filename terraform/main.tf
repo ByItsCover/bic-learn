@@ -32,7 +32,7 @@ resource "aws_batch_job_definition" "job" {
 
     volumes = [
       {
-        name = "recVolume"
+        name = var.efs_volume_name
         efs_volume_configuration = {
           file_system_id     = local.rec_efs_system_id
           transit_encryption = "ENABLED"
@@ -46,8 +46,8 @@ resource "aws_batch_job_definition" "job" {
 
     mountPoints = [
       {
-        sourceVolume  = "recVolume"
-        containerPath = "/mount/efs"
+        sourceVolume  = var.efs_volume_name
+        containerPath = var.efs_path
         readOnly      = false
       }
     ]
@@ -64,6 +64,10 @@ resource "aws_batch_job_definition" "job" {
       {
         name  = "AWS_REGION"
         value = var.aws_region
+      },
+      {
+        name  = "MODEL_ROOT_DIR"
+        value = var.efs_path
       }
     ]
 
