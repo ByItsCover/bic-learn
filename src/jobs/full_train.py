@@ -28,7 +28,7 @@ async def full_train(
     trending_covers_task = asyncio.create_task(get_trending_covers(hardcover_session, trending_count))
 
     db = await db_task
-    cover_table_task = asyncio.create_task(get_cover_table(db, CLIP_DIM, tower_dim))
+    cover_table_task = asyncio.create_task(get_cover_table(db, tower_dim))
 
     cover_table = await cover_table_task
     popular_covers = await popular_covers_task
