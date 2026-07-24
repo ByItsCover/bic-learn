@@ -10,7 +10,6 @@ def test_parse_args(monkeypatch):
     monkeypatch.setenv('DB_URI', 'cover_lancedb')
     monkeypatch.setenv('EMBED_LAMBDA_NAME', 'embed_lambda')
     monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
-    monkeypatch.setenv('TOWER_DIM', '64')
 
     params = parse_args([])
     assert params.env == 'Development'
@@ -25,7 +24,6 @@ def test_parse_args_type_exception(monkeypatch):
     monkeypatch.setenv('DB_URI', 'cover_lancedb')
     monkeypatch.setenv('EMBED_LAMBDA_NAME', 'embed_lambda')
     monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
-    monkeypatch.setenv('TOWER_DIM', '64')
 
     with pytest.raises(SystemExit) as excinfo:
         _ = parse_args([])
@@ -64,7 +62,7 @@ def test_parse_args_type_exception(monkeypatch):
 
     # Integer type missmatch
     monkeypatch.setenv('USER_LR', '0.001')
-    monkeypatch.setenv('TOWER_DIM', '3.14')
+    monkeypatch.setenv('POPULAR_COUNT', '3.14')
 
     with pytest.raises(SystemExit) as excinfo:
         _ = parse_args([])

@@ -28,6 +28,6 @@ if __name__ == '__main__':
     if params.job_type == JobType.full_train:
         loop.run_until_complete(full_train(
             params.aws_region, params.db_uri, params.embed_lambda_name, params.hardcover_token,
-            params.tower_dim, params.model_root_dir, params.epochs, params.user_lr, params.item_lr,
+            params.model_root_dir, params.epochs, params.user_lr, params.item_lr,
             params.popular_count, params.trending_count
         ))

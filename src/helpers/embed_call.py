@@ -4,15 +4,15 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 import json
 import logging
-from helpers.hardcover import Cover
+from helpers.hardcover import CoverRecord
 
 logger = logging.getLogger(__name__)
 
 
-async def embed_covers(covers: list[Cover], lambda_client: BaseClient, function_name: str, get_log = False):
+async def embed_covers(covers: list[CoverRecord], lambda_client: BaseClient, function_name: str, get_log = False):
     await asyncio.to_thread(embed_covers_sync, covers, lambda_client, function_name, get_log)
 
-def embed_covers_sync(covers: list[Cover], lambda_client: BaseClient, function_name: str, get_log = False):
+def embed_covers_sync(covers: list[CoverRecord], lambda_client: BaseClient, function_name: str, get_log = False):
     records = []
     for cover in covers:
         record = {

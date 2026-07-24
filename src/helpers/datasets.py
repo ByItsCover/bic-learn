@@ -6,6 +6,13 @@ from lancedb.permutation import Permutation, permutation_builder
 import uuid
 
 
+def process_user_id(user_id: uuid.UUID) -> torch.Tensor:
+    bytes_copy = bytearray(user_id.bytes_le)
+    return (
+        torch.frombuffer(bytes_copy, dtype=torch.int32)
+        .to(dtype=torch.float32).unsqueeze(0)
+    )
+
 class PopularCoversDataSet(Dataset):
     def __init__(
             self, table: Table, cover_ids: list[int], cover_id_field: str = "cover_id",
@@ -26,10 +33,7 @@ class PopularCoversDataSet(Dataset):
         return len(self.cover_ids)
 
     def _get_default_user(self) -> Tensor:
-        return (
-            torch.frombuffer(self.default_user_id.bytes_le, dtype=torch.int32)
-            .to(dtype=torch.float32).unsqueeze(0)
-        )
+        return process_user_id(self.default_user_id)
 
     def _ensure_permutation(self):
         if self.perm is None:

@@ -20,12 +20,11 @@ def parse_args(args) -> argparse.Namespace:
     parser.add_argument('--hardcover_token', action=EnvDefault, envvar='HARDCOVER_TOKEN', required=False)
 
     parser.add_argument('--model_root_dir', action=EnvDefault, envvar='MODEL_ROOT_DIR')
-    parser.add_argument('--tower_dim', action=EnvDefault, envvar='TOWER_DIM', type=int)
-    parser.add_argument('--epochs', action=EnvDefault, envvar='TOWER_DIM', type=int, default=1)
+    parser.add_argument('--epochs', action=EnvDefault, envvar='EPOCHS', type=int, default=1)
     parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=1e-3)
     parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=1e-3)
 
-    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=float, default=10)
-    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=float, default=10)
+    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=10)
+    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=10)
 
     return parser.parse_args(args)

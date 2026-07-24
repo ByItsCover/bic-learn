@@ -54,12 +54,6 @@ variable "embed_lambda_name" {
   description = "Name of Embed Server Lambda Function"
 }
 
-variable "batch_tower_dim" {
-  type        = number
-  description = "Number of dimensions for two tower model output"
-  default     = 64
-}
-
 variable "efs_volume_name" {
   type        = string
   description = "Name of EFS volume attached to batch instance"

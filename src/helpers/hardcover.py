@@ -8,13 +8,13 @@ from config.constants import HARDCOVER_URL
 logger = logging.getLogger(__name__)
 
 
-class Cover(BaseModel):
+class CoverRecord(BaseModel):
     id: int = Field(validation_alias=AliasPath("default_cover_edition", "id"))
     isbn_13: str = Field(validation_alias=AliasPath("default_cover_edition", "isbn_13"))
     book_id: int = Field(alias="id")
     image_url: str = Field(validation_alias=AliasPath("default_cover_edition", "image", "url"))
 
-cover_adapter = TypeAdapter(Cover)
+cover_adapter = TypeAdapter(CoverRecord)
 
 def get_hardcover_client(hardcover_token: str):
     transport = AIOHTTPTransport(
@@ -27,7 +27,7 @@ def get_hardcover_client(hardcover_token: str):
 
     return client
 
-async def get_popular_covers(session: AsyncClientSession, popular_count: int) -> list[Cover]:
+async def get_popular_covers(session: AsyncClientSession, popular_count: int) -> list[CoverRecord]:
     query = gql(
         """
         query PopularCovers($popular_count: Int) {
@@ -70,13 +70,13 @@ async def get_popular_covers(session: AsyncClientSession, popular_count: int) ->
 
     return covers
 
-def order_covers(covers: list[Cover], id_list: list[int]) -> list[Cover]:
+def order_covers(covers: list[CoverRecord], id_list: list[int]) -> list[CoverRecord]:
     covers_map = {cid: ind for ind, cid in enumerate(id_list)}
     ordered_covers = sorted(covers, key=lambda x: covers_map[x.book_id])
 
     return ordered_covers
 
-async def get_trending_covers(session: AsyncClientSession, trending_count: int) -> list[Cover]:
+async def get_trending_covers(session: AsyncClientSession, trending_count: int) -> list[CoverRecord]:
     ids_query = gql(
         """
         query TrendingIds($trending_count: Int) {

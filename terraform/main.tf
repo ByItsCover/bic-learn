@@ -72,10 +72,6 @@ resource "aws_batch_job_definition" "job" {
       {
         name  = "MODEL_ROOT_DIR"
         value = var.efs_path
-      },
-      {
-        name  = "TOWER_DIM"
-        value = tostring(var.batch_tower_dim)
       }
     ]
 
