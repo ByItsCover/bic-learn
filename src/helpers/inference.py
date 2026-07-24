@@ -59,12 +59,15 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
     item_tower.eval()
     cover_table.checkout_latest()
 
+    added_covers = set()
     cover_ids = []
     cover_embeddings = []
     db_cover_dict = cover_table.search().select(["cover_id", "cover_embedding"]).to_list()
     for cover in db_cover_dict:
-        cover_ids.append(cover["cover_id"])
-        cover_embeddings.append(cover["cover_embedding"])
+        if cover["cover_id"] not in added_covers:
+            cover_ids.append(cover["cover_id"])
+            cover_embeddings.append(cover["cover_embedding"])
+            added_covers.add(cover["cover_id"])
 
     cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
     with torch.no_grad():
