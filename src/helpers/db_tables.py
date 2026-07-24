@@ -5,6 +5,7 @@ from lancedb.db import DBConnection
 from lancedb.index import BTree
 from lancedb.pydantic import LanceModel, Vector
 from pydantic import PlainSerializer, TypeAdapter
+import pyarrow as pa
 from typing import Optional, Annotated
 import uuid
 from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME
@@ -56,9 +57,15 @@ async def get_user_table(db: DBConnection) -> Table:
     return await asyncio.to_thread(get_user_table_sync, db)
 
 def get_user_table_sync(db: DBConnection) -> Table:
+    user_schema = pa.schema(
+        [
+            pa.field("user_id", pa.uuid(), nullable=False),
+            pa.field("tower_embedding", pa.list_(pa.float32(), TOWER_DIM), nullable=False),
+        ]
+    )
     user_table = db.create_table(
         USER_TABLE_NAME,
-        schema=User.to_arrow_schema(),
+        schema=user_schema,
         exist_ok=True,
     )
 
