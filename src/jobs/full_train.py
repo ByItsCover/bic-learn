@@ -32,11 +32,12 @@ async def full_train(
     cover_table = await cover_table_task
     popular_covers = await popular_covers_task
     trending_covers = await trending_covers_task
-    hot_covers = popular_covers + trending_covers
+    hot_covers_map = {cover.id: cover for cover in popular_covers + trending_covers}
+    hot_covers = list(hot_covers_map.values())
     lambda_client = get_lambda_client(aws_region)
     embed_covers_task = asyncio.create_task(embed_covers(hot_covers, lambda_client, embed_lambda))
 
-    hot_cover_ids = [cover.id for cover in hot_covers]
+    hot_cover_ids = list(hot_covers_map.keys())
     dataset = PopularCoversDataSet(cover_table, cover_ids=hot_cover_ids)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
