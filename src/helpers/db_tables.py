@@ -11,7 +11,10 @@ async def get_cover_table(db: AsyncConnection, tower_dim: int) -> AsyncTable:
     if not id_stats:
         await cover_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
 
-    await cover_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({tower_dim}, Float32)')"})
-    await cover_table.alter_columns({"path": "embedding", "rename": "cover_embedding"})
+    cover_schema = await cover_table.schema()
+    if "tower_embedding" not in cover_schema.names:
+        await cover_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({tower_dim}, Float32)')"})
+    if "cover_embedding" not in cover_schema.names:
+        await cover_table.alter_columns({"path": "embedding", "rename": "cover_embedding"})
 
     return cover_table
