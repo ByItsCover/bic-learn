@@ -3,16 +3,17 @@ import torch
 from torch.utils.data import DataLoader
 import logging
 from helpers.datasets import PopularCoversDataSet
-from helpers.db_tables import get_db, get_cover_table
+from helpers.db_tables import get_db, get_cover_table, get_user_table
 from helpers.models import UserTower, ItemTower, train_models, save_models
 from helpers.hardcover import get_hardcover_client, get_popular_covers, get_trending_covers
 from helpers.embed_call import get_lambda_client, embed_covers
+from helpers.inference import update_all_users, update_all_covers
 
 logger = logging.getLogger(__name__)
 
 
 async def full_train(
-        aws_region: str, db_uri: str, embed_lambda: str, hardcover_token: str, tower_dim: int, model_dir: str, epochs: int, user_lr: float,
+        aws_region: str, db_uri: str, embed_lambda: str, hardcover_token: str, model_dir: str, epochs: int, user_lr: float,
         item_lr: float, popular_count: int, trending_count: int
     ):
     logger.info("CUDA availability: %s", torch.cuda.is_available())
@@ -26,7 +27,8 @@ async def full_train(
     trending_covers_task = asyncio.create_task(get_trending_covers(hardcover_session, trending_count))
 
     db = await db_task
-    cover_table_task = asyncio.create_task(get_cover_table(db, tower_dim))
+    cover_table_task = asyncio.create_task(get_cover_table(db))
+    user_table_task = asyncio.create_task(get_user_table(db))
 
     cover_table = await cover_table_task
     popular_covers = await popular_covers_task
@@ -40,11 +42,18 @@ async def full_train(
     dataset = PopularCoversDataSet(cover_table, cover_ids=hot_cover_ids)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
-    user_tower = UserTower(tower_dim)
-    item_tower = ItemTower(tower_dim)
+    user_tower = UserTower()
+    item_tower = ItemTower()
 
     await embed_covers_task
     train_models(user_tower, item_tower, dataloader, epochs, user_lr, item_lr)
+
+    update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
+    user_table = await user_table_task
+    update_all_users_task = asyncio.create_task(update_all_users(user_table, user_tower))
+
+    await update_all_users_task
+    await update_all_covers_task
     save_models(user_tower, item_tower, model_dir)
 
     await hardcover_client.close_async()

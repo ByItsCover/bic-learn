@@ -3,13 +3,13 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import CLIP_DIM, USER_ID_DIM
+from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM
 
 logger = logging.getLogger(__name__)
 
 
 class UserTower(torch.nn.Module):
-    def __init__(self, output_dim: int, input_dim: int = USER_ID_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM):
         super().__init__()
         self.layer_1 = torch.nn.Linear(input_dim, output_dim)
 
@@ -18,7 +18,7 @@ class UserTower(torch.nn.Module):
         return out
 
 class ItemTower(torch.nn.Module):
-    def __init__(self, output_dim: int, input_dim: int = CLIP_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = CLIP_DIM):
         super().__init__()
         self.layer_1 = torch.nn.Linear(input_dim, output_dim)
 
