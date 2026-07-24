@@ -1,6 +1,7 @@
 locals {
-  batch_queue_arn    = data.terraform_remote_state.bic_infra.outputs.learn_batch_queue_arn
-  scheduler_role_arn = data.terraform_remote_state.bic_infra.outputs.scheduler_role_arn
+  batch_queue_arn            = data.terraform_remote_state.bic_infra.outputs.learn_batch_queue_arn
+  scheduler_role_arn         = data.terraform_remote_state.bic_infra.outputs.scheduler_role_arn
+  eventbridge_deadletter_arn = data.terraform_remote_state.bic_infra.outputs.eventbridge_deadletter_arn
 }
 
 
@@ -17,6 +18,10 @@ resource "aws_scheduler_schedule" "full-train-schedule" {
   target {
     arn      = var.scheduler_arn
     role_arn = local.scheduler_role_arn
+
+    dead_letter_config {
+      arn = local.eventbridge_deadletter_arn
+    }
 
     input = jsonencode({
       "JobName" : "full-train-job",
