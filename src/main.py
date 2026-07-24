@@ -1,11 +1,14 @@
+import asyncio
 import sys
 import logging
 from dotenv import load_dotenv
-from utils.arg_utils import parse_args, Environments, JobType
+from config.arg_parser import parse_args, Environments, JobType
 from jobs.full_train import full_train
 
 load_dotenv()
 logger = logging.getLogger(__name__)
+
+asyncio.set_event_loop(asyncio.new_event_loop())
 
 
 if __name__ == '__main__':
@@ -16,7 +19,15 @@ if __name__ == '__main__':
     elif params.env == Environments.prod:
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    logger.debug("Args: %s %s %s %s $s", params.env, params.job_type, params.db_uri, params.model_root_dir, params.tower_dim)
+    logger.debug(
+        "Args: %s %s %s %s $s",
+        params.env, params.job_type,params.db_uri, params.model_root_dir, params.tower_dim
+    )
 
+    loop = asyncio.get_event_loop()
     if params.job_type == JobType.full_train:
-        full_train(params.tower_dim, params.model_root_dir)
+        loop.run_until_complete(full_train(
+            params.aws_region, params.db_uri, params.embed_lambda_name, params.hardcover_token,
+            params.tower_dim, params.model_root_dir, params.epochs, params.user_lr, params.item_lr,
+            params.popular_count, params.trending_count
+        ))

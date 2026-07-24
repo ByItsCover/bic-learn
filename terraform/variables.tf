@@ -49,6 +49,11 @@ variable "batch_gpus" {
   default     = 1
 }
 
+variable "embed_lambda_name" {
+  type        = string
+  description = "Name of Embed Server Lambda Function"
+}
+
 variable "batch_tower_dim" {
   type        = number
   description = "Number of dimensions for two tower model output"

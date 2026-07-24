@@ -1,6 +1,17 @@
+# General
 python-dotenv
-onnxscript
 
+# Models
 --extra-index-url https://download.pytorch.org/whl/cu132
 torch
 torchvision
+onnxscript
+
+# Data
+lancedb
+
+# Hardcover
+gql[aiohttp]
+
+# AWS
+boto3
