@@ -23,7 +23,7 @@ class User(LanceModel):
     user_id: Annotated[uuid.UUID, PlainSerializer(lambda x: x.bytes, return_type=bytes)]
     tower_embedding: Vector(TOWER_DIM)  # pyright: ignore[reportInvalidTypeForm]
 
-users_adapter = TypeAdapter(list[Cover])
+users_adapter = TypeAdapter(list[User])
 
 async def get_db(uri: str) -> DBConnection:
     return await asyncio.to_thread(get_db_sync, uri)
