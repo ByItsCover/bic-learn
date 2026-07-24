@@ -1,14 +1,14 @@
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
-from lancedb import AsyncTable
+from lancedb import Table
 from lancedb.permutation import Permutation, permutation_builder
 import uuid
 
 
 class PopularCoversDataSet(Dataset):
     def __init__(
-            self, table: AsyncTable, cover_ids: list[int], cover_id_field: str = "cover_id",
+            self, table: Table, cover_ids: list[int], cover_id_field: str = "cover_id",
             embedding_field: str = "cover_embedding", min_rating: float = 0.0, max_rating: float = 5.0
         ):
         self.table = table

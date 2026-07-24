@@ -1,20 +1,31 @@
-from lancedb import AsyncTable
-from lancedb.db import AsyncConnection
+import asyncio
+import lancedb
+from lancedb import Table
+from lancedb.db import DBConnection
 from lancedb.index import BTree
 from config.constants import COVER_TABLE_NAME
 
 
-async def get_cover_table(db: AsyncConnection, tower_dim: int) -> AsyncTable:
-    cover_table = await db.open_table(COVER_TABLE_NAME)
+async def get_db(uri: str) -> DBConnection:
+    return await asyncio.to_thread(get_db_sync, uri)
 
-    id_stats = await cover_table.index_stats("cover_id_idx")
+def get_db_sync(uri: str) -> DBConnection:
+    return lancedb.connect(uri)
+
+async def get_cover_table(db: DBConnection, tower_dim: int) -> Table:
+    return await asyncio.to_thread(get_cover_table_sync, db, tower_dim)
+
+def get_cover_table_sync(db: DBConnection, tower_dim: int) -> Table:
+    cover_table = db.open_table(COVER_TABLE_NAME)
+
+    id_stats = cover_table.index_stats("cover_id_idx")
     if not id_stats:
-        await cover_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
+        cover_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
 
-    cover_schema = await cover_table.schema()
+    cover_schema = cover_table.schema
     if "tower_embedding" not in cover_schema.names:
-        await cover_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({tower_dim}, Float32)')"})
+        cover_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({tower_dim}, Float32)')"})
     if "cover_embedding" not in cover_schema.names:
-        await cover_table.alter_columns({"path": "embedding", "rename": "cover_embedding"})
+        cover_table.alter_columns({"path": "embedding", "rename": "cover_embedding"})
 
     return cover_table
