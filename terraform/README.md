@@ -33,7 +33,6 @@ No modules.
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS Region | `string` | n/a | yes |
 | <a name="input_batch_gpus"></a> [batch\_gpus](#input\_batch\_gpus) | Number of GPUs for batch job | `number` | `1` | no |
 | <a name="input_batch_memory"></a> [batch\_memory](#input\_batch\_memory) | Memory size for batch job | `number` | `512` | no |
-| <a name="input_batch_tower_dim"></a> [batch\_tower\_dim](#input\_batch\_tower\_dim) | Number of dimensions for two tower model output | `number` | `64` | no |
 | <a name="input_batch_vcpu"></a> [batch\_vcpu](#input\_batch\_vcpu) | VCPU count for batch job | `number` | `1` | no |
 | <a name="input_bic_infra_workspace"></a> [bic\_infra\_workspace](#input\_bic\_infra\_workspace) | Terraform Cloud Workspace BIC-Infra name | `string` | n/a | yes |
 | <a name="input_efs_path"></a> [efs\_path](#input\_efs\_path) | File path for EFS attached to batch instance | `string` | `"/mount/efs"` | no |
