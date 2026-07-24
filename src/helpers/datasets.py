@@ -34,6 +34,7 @@ class PopularCoversDataSet(Dataset):
     def _ensure_permutation(self):
         if self.perm is None:
             id_strings = [f'{cid}' for cid in self.cover_ids]
+            self.table.checkout_latest()
             permutation_tbl = (
                 permutation_builder(self.table)
                 .filter(f"{self.cover_id_field} IN ({', '.join(id_strings)})")

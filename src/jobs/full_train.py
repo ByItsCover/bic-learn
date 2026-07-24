@@ -1,5 +1,4 @@
 import asyncio
-import lancedb
 import torch
 from torch.utils.data import DataLoader
 import logging
