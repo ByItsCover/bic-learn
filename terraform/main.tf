@@ -62,6 +62,10 @@ resource "aws_batch_job_definition" "job" {
         value = local.s3_db_uri
       },
       {
+        name  = "EMBED_LAMBDA_NAME"
+        value = var.embed_lambda_name
+      },
+      {
         name  = "AWS_REGION"
         value = var.aws_region
       },
