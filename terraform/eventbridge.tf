@@ -1,6 +1,6 @@
 locals {
-  batch_queue_arn    = data.terraform_remote_state.bic_infra.outputs.learn_batch_queue_arn
-  scheduler_role_arn = data.terraform_remote_state.bic_infra.outputs.scheduler_role_arn
+  batch_queue_arn            = data.terraform_remote_state.bic_infra.outputs.learn_batch_queue_arn
+  scheduler_role_arn         = data.terraform_remote_state.bic_infra.outputs.scheduler_role_arn
   eventbridge_deadletter_arn = data.terraform_remote_state.bic_infra.outputs.eventbridge_deadletter_arn
 }
 
