@@ -20,8 +20,8 @@ if __name__ == '__main__':
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     logger.debug(
-        "Args: %s %s %s %s $s",
-        params.env, params.job_type,params.db_uri, params.model_root_dir, params.tower_dim
+        "Args: %s %s %s %s",
+        params.env, params.job_type, params.db_uri, params.model_root_dir
     )
 
     loop = asyncio.get_event_loop()
