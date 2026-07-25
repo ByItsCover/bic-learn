@@ -4,6 +4,8 @@ from torch.utils.data import Dataset
 from lancedb import Table
 from lancedb.permutation import Permutation, permutation_builder
 import uuid
+from helpers.hardcover import CoverRecord
+from config.constants import MAX_RATING, MIN_RATING
 
 
 def process_user_id(user_id: uuid.UUID) -> torch.Tensor:
@@ -15,12 +17,13 @@ def process_user_id(user_id: uuid.UUID) -> torch.Tensor:
 
 class PopularCoversDataSet(Dataset):
     def __init__(
-            self, table: Table, cover_ids: list[int], cover_id_field: str = "cover_id",
-            embedding_field: str = "cover_embedding", min_rating: float = 0.0, max_rating: float = 5.0
+            self, table: Table, covers_map: dict[int, tuple[CoverRecord, float]],
+            id_field: str = "cover_id", embedding_field: str = "cover_embedding",
+            min_rating: float = MIN_RATING, max_rating: float = MAX_RATING
         ):
         self.table = table
-        self.cover_ids = cover_ids
-        self.cover_id_field = cover_id_field
+        self.covers_map = covers_map
+        self.id_field = id_field
         self.embedding_field = embedding_field
         self.min_rating = min_rating
         self.max_rating = max_rating
@@ -30,23 +33,23 @@ class PopularCoversDataSet(Dataset):
         self.perm: Permutation | None = None
 
     def __len__(self):
-        return len(self.cover_ids)
+        return len(self.covers_map)
 
     def _get_default_user(self) -> Tensor:
         return process_user_id(self.default_user_id)
 
     def _ensure_permutation(self):
         if self.perm is None:
-            id_strings = [f'{cid}' for cid in self.cover_ids]
+            id_strings = [f'{cid}' for cid, _ in self.covers_map.items()]
             self.table.checkout_latest()
             permutation_tbl = (
                 permutation_builder(self.table)
-                .filter(f"{self.cover_id_field} IN ({', '.join(id_strings)})")
+                .filter(f"{self.id_field} IN ({', '.join(id_strings)})")
                 .execute()
             )
             permutation = (
                 Permutation.from_tables(self.table, permutation_tbl)
-                .select_columns(["cover_id", "cover_embedding"])
+                .select_columns([self.id_field, self.embedding_field])
             )
             self.perm = permutation
 
@@ -54,7 +57,7 @@ class PopularCoversDataSet(Dataset):
         self._ensure_permutation()
         cover = self.perm.__getitem__(idx)[0]
         item_arr = torch.tensor(cover[self.embedding_field])
-        rating_arr = torch.tensor([self.max_rating])
+        rating_arr = torch.tensor([self.covers_map[cover[self.id_field]][1]])
         min_rating_arr = torch.tensor([self.min_rating])
         max_rating_arr = torch.tensor([self.max_rating])
 
