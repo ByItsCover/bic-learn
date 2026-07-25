@@ -142,7 +142,7 @@ async def get_trending_covers(session: AsyncClientSession, trending_count: int) 
 
 def get_hot_covers_map(
         popular_covers: list[CoverRecord], trending_covers: list[CoverRecord],
-        popular_score: float = 2.0, trending_score: float = 1.0
+        popular_score: float = 3.0, trending_score: float = 2.0
     ) -> dict[int, tuple[CoverRecord, float]]:
     popular_covers_map = {cover.id: (cover, popular_score) for cover in popular_covers}
     trending_covers_map = {cover.id: (cover, trending_score) for cover in trending_covers}
