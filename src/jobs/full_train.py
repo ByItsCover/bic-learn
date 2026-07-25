@@ -5,7 +5,7 @@ import logging
 from helpers.datasets import PopularCoversDataSet
 from helpers.db_tables import get_db, get_cover_table, get_user_table
 from helpers.models import UserTower, ItemTower, train_models, save_models
-from helpers.hardcover import get_hardcover_client, get_popular_covers, get_trending_covers
+from helpers.hardcover import get_hardcover_client, get_popular_covers, get_trending_covers, get_hot_covers_map
 from helpers.embed_call import get_lambda_client, embed_covers
 from helpers.inference import update_all_users, update_all_covers
 
@@ -33,13 +33,12 @@ async def full_train(
     cover_table = await cover_table_task
     popular_covers = await popular_covers_task
     trending_covers = await trending_covers_task
-    hot_covers_map = {cover.id: cover for cover in popular_covers + trending_covers}
-    hot_covers = list(hot_covers_map.values())
+    hot_covers_map = get_hot_covers_map(popular_covers, trending_covers)
+    hot_covers = [cover[0] for cover in hot_covers_map.values()]
     lambda_client = get_lambda_client(aws_region)
     embed_covers_task = asyncio.create_task(embed_covers(hot_covers, lambda_client, embed_lambda))
 
-    hot_cover_ids = list(hot_covers_map.keys())
-    dataset = PopularCoversDataSet(cover_table, cover_ids=hot_cover_ids)
+    dataset = PopularCoversDataSet(cover_table, covers_map=hot_covers_map)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
     user_tower = UserTower()
