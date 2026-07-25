@@ -1,5 +1,5 @@
 locals {
-  scheduler_role_name = data.terraform_remote_state.bic_infra.outputs.scheduler_role_arn
+  scheduler_role_name = data.terraform_remote_state.bic_infra.outputs.scheduler_role_name
 }
 
 
