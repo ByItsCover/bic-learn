@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 from config.arg_parser import parse_args, Environments, JobType
 from jobs.full_train import full_train
+from jobs.create_tables import create_tables
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -31,3 +32,5 @@ if __name__ == '__main__':
             params.model_root_dir, params.epochs, params.user_lr, params.item_lr,
             params.popular_count, params.trending_count
         ))
+    elif params.job_type == JobType.create_tables:
+        loop.run_until_complete(create_tables(params.db_uri))

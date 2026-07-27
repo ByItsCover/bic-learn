@@ -8,7 +8,7 @@ from pydantic import PlainSerializer, TypeAdapter
 import pyarrow as pa
 from typing import Optional, Annotated
 import uuid
-from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME
+from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME, FEEDBACK_TABLE_NAME
 
 
 class Cover(LanceModel):
@@ -24,6 +24,7 @@ class User(LanceModel):
     tower_embedding: Vector(TOWER_DIM)  # pyright: ignore[reportInvalidTypeForm]
 
 users_adapter = TypeAdapter(list[User])
+
 
 async def get_db(uri: str) -> DBConnection:
     return await asyncio.to_thread(get_db_sync, uri)
@@ -74,3 +75,30 @@ def get_user_table_sync(db: DBConnection) -> Table:
         user_table.create_index("user_id", config=BTree(), name="user_id_idx")
 
     return user_table
+
+async def get_feedback_table(db: DBConnection) -> Table:
+    return await asyncio.to_thread(get_feedback_table_sync, db)
+
+def get_feedback_table_sync(db: DBConnection) -> Table:
+    feedback_schema = pa.schema(
+        [
+            pa.field("user_id", pa.uuid(), nullable=False),
+            pa.field("cover_id", pa.int64(), nullable=False),
+            pa.field("type", pa.string(), nullable=False),
+            pa.field("score", pa.int64(), nullable=False),
+            pa.field("timestamp", pa.timestamp('us'), nullable=False),
+        ]
+    )
+    feedback_table = db.create_table(
+        FEEDBACK_TABLE_NAME,
+        schema=feedback_schema,
+        exist_ok=True,
+    )
+
+    user_id_stats = feedback_table.index_stats("user_id_idx")
+    cover_id_stats = feedback_table.index_stats("cover_id_idx")
+    if not user_id_stats or not cover_id_stats:
+        feedback_table.create_index("user_id", config=BTree(), name="user_id_idx")
+        feedback_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
+
+    return feedback_table
