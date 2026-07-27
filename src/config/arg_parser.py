@@ -9,6 +9,7 @@ class Environments(str, Enum):
 
 class JobType(str, Enum):
     full_train = "full_train"
+    create_tables = "create_tables"
 
 def parse_args(args) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
