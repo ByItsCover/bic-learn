@@ -101,4 +101,6 @@ def get_feedback_table_sync(db: DBConnection) -> Table:
         feedback_table.create_index("user_id", config=BTree(), name="user_id_idx")
         feedback_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
 
+    feedback_table.delete("cover_id = 30426415")
+
     return feedback_table
