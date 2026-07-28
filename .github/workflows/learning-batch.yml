@@ -15,11 +15,6 @@ on:
         options:
           - full_train
           - create_tables
-      gpuCount:
-        description: 'Learning Job Number of GPUs'
-        required: true
-        default: 1
-        type: number
       memory:
         description: 'Memory size for Learning Job'
         required: true
@@ -46,7 +41,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
 
-      - name: Submit Job
+      - name: Submit Full Train Job
+        if: ${{ inputs.jobType == 'full_train' }}
         run: |
           aws batch submit-job \
               --job-name ${{ inputs.jobName }}-${{ github.run_id }} \
@@ -56,8 +52,30 @@ jobs:
                 "resourceRequirements": [
                   {
                     "type": "GPU",
-                    "value": "${{ inputs.gpuCount }}"
+                    "value": "1"
                   },
+                  {
+                    "type": "MEMORY",
+                    "value": "${{ inputs.memory }}"
+                  }
+                ],
+                "environment": [
+                  {
+                    "name": "JOB_TYPE",
+                    "value": "${{ inputs.jobType }}"
+                  }
+                ]
+              }'
+
+      - name: Submit Create Tables Job
+        if: ${{ inputs.jobType == 'create_tables' }}
+        run: |
+          aws batch submit-job \
+              --job-name ${{ inputs.jobName }}-${{ github.run_id }} \
+              --job-queue learning-queue \
+              --job-definition learning_batch_job_definition \
+              --container-overrides '{
+                "resourceRequirements": [
                   {
                     "type": "MEMORY",
                     "value": "${{ inputs.memory }}"
