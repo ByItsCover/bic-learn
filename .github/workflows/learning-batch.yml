@@ -15,6 +15,16 @@ on:
         options:
           - full_train
           - create_tables
+      gpuCount:
+        description: 'Learning Job Number of GPUs'
+        required: true
+        default: 1
+        type: number
+      memory:
+        description: 'Memory size for Learning Job'
+        required: true
+        default: 2048
+        type: number
 
 permissions:
   id-token: write
@@ -43,6 +53,16 @@ jobs:
               --job-queue learning-queue \
               --job-definition learning_batch_job_definition \
               --container-overrides '{
+                "resourceRequirements": [
+                  {
+                    "type": "GPU",
+                    "value": "${{ inputs.gpuCount }}"
+                  },
+                  {
+                    "type": "MEMORY",
+                    "value": "${{ inputs.memory }}"
+                  }
+                ],
                 "environment": [
                   {
                     "name": "JOB_TYPE",

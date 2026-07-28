@@ -21,7 +21,7 @@ class Cover(LanceModel):
 
 class User(LanceModel):
     user_id: Annotated[uuid.UUID, PlainSerializer(lambda x: x.bytes, return_type=bytes)]
-    tower_embedding: Vector(TOWER_DIM)  # pyright: ignore[reportInvalidTypeForm]
+    tower_embedding: Optional[Vector(TOWER_DIM)] = None  # pyright: ignore[reportInvalidTypeForm, reportInvalidTypeArguments]
 
 users_adapter = TypeAdapter(list[User])
 
@@ -61,7 +61,7 @@ def get_user_table_sync(db: DBConnection) -> Table:
     user_schema = pa.schema(
         [
             pa.field("user_id", pa.uuid(), nullable=False),
-            pa.field("tower_embedding", pa.list_(pa.float32(), TOWER_DIM), nullable=False),
+            pa.field("tower_embedding", pa.list_(pa.float32(), TOWER_DIM), nullable=True),
         ]
     )
     user_table = db.create_table(
