@@ -28,6 +28,12 @@ resource "aws_scheduler_schedule" "full-train-schedule" {
       "JobDefinition" : aws_batch_job_definition.job.arn,
       "JobQueue" : local.batch_queue_arn,
       "ContainerOverrides" : {
+        "ResourceRequirements" : [
+          {
+            "Type" : "GPU",
+            "Value" : tostring(var.batch_gpus)
+          }
+        ],
         "Environment" : [
           {
             "Name" : "JOB_TYPE",
