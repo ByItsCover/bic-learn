@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_BUCKET_SIZE, HIDDEN_DIM, DROPOUT
+from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +30,8 @@ class UserTower(torch.nn.Module):
 class ItemTower(torch.nn.Module):
     def __init__(
             self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM,
-            id_bucket_size: int = ITEM_ID_BUCKET_SIZE, hidden_dim: int = HIDDEN_DIM,
-            dropout: float = DROPOUT
+            max_item_count: int = MAX_ITEM_COUNT, id_bucket_count: int = ITEM_ID_BUCKET_COUNT,
+            hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT
     ):
         super().__init__()
         self.features_layer = nn.Sequential(
@@ -40,13 +40,24 @@ class ItemTower(torch.nn.Module):
             nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
-        self.id_layer = nn.Embedding(id_bucket_size, output_dim)
+        self.id_bucket_count = id_bucket_count
+        self.q_vocab_size = (max_item_count // self.id_bucket_count) + 1
+        self.r_vocab_size = self.id_bucket_count
+        self.q_layer = nn.Embedding(self.q_vocab_size, output_dim)
+        self.r_layer = nn.Embedding(self.r_vocab_size, output_dim)
         self.tower = nn.Linear(output_dim * 2, output_dim)
 
     def forward(self, features_x: torch.Tensor, id_x: torch.Tensor):
         feature_embed = self.features_layer(features_x)
-        id_embed = self.id_layer(id_x)
+
+        quotient_id = torch.floor_divide(id_x, self.id_bucket_count)
+        remainder_id = torch.remainder(id_x, self.id_bucket_count)
+        quotient_embed = self.q_layer(quotient_id)
+        remainder_embed = self.r_layer(remainder_id)
+
+        id_embed = quotient_embed * remainder_embed
         x = torch.concat([feature_embed, id_embed], dim=-1)
+
         out = self.tower(x)
         return out
 
