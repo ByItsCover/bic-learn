@@ -28,8 +28,9 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     if params.job_type == JobType.full_train:
         loop.run_until_complete(full_train(
-            params.aws_region, params.db_uri, params.embed_lambda_name, params.hardcover_token,
-            params.model_root_dir, params.epochs, params.user_lr, params.item_lr,
+            params.aws_region, params.db_uri, params.embed_lambda_name,
+            params.hardcover_token, params.model_root_dir, params.epochs,
+            params.batch_size, params.shuffle, params.user_lr, params.item_lr,
             params.popular_count, params.trending_count
         ))
     elif params.job_type == JobType.create_tables:

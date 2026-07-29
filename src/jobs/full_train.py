@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 async def full_train(
-        aws_region: str, db_uri: str, embed_lambda: str, hardcover_token: str, model_dir: str, epochs: int, user_lr: float,
+        aws_region: str, db_uri: str, embed_lambda: str, hardcover_token: str,
+        model_dir: str, epochs: int, batch_size: int, shuffle: bool, user_lr: float,
         item_lr: float, popular_count: int, trending_count: int
     ):
     logger.info("CUDA availability: %s", torch.cuda.is_available())
@@ -46,7 +47,7 @@ async def full_train(
     feedback_table = await feedback_table_task
     feedback_dataset = FeedbackDataSet(feedback_table, cover_table)
     full_dataset = ConcatDataset([hot_dataset, feedback_dataset])
-    dataloader = DataLoader(full_dataset, batch_size=1, shuffle=False)
+    dataloader = DataLoader(full_dataset, batch_size=batch_size, shuffle=shuffle)
 
     await embed_covers_task
     train_models(user_tower, item_tower, dataloader, epochs, user_lr, item_lr)
