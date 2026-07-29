@@ -70,8 +70,9 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
             added_covers.add(cover["cover_id"])
 
     cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
+    cover_id_tensors = torch.vstack([torch.tensor([cid]) for cid in cover_ids])
     with torch.no_grad():
-        tower_embeddings_tensor = item_tower(cover_tensors)
+        tower_embeddings_tensor = item_tower(cover_tensors, cover_id_tensors)
         logger.info("Cover update shape: %s", tower_embeddings_tensor.shape)
 
     tower_embedding_list = torch.unbind(tower_embeddings_tensor, dim=0)
