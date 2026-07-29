@@ -13,5 +13,5 @@ def process_user_id(user_id: uuid.UUID) -> torch.Tensor:
         .to(dtype=torch.float32).unsqueeze(0)
     )
 
-def id_hash(id_val: int, hash_dim: int = ITEM_ID_BUCKET_SIZE):
+def process_item_id(id_val: int, hash_dim: int = ITEM_ID_BUCKET_SIZE) -> int:
     return hash(id_val) % hash_dim
