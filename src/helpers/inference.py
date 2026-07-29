@@ -7,7 +7,7 @@ import uuid
 import logging
 from helpers.models import UserTower, ItemTower
 from helpers.db_tables import User, users_adapter
-from helpers.datasets import process_user_id, process_item_id
+from helpers.datasets import process_user_id
 from helpers.tensor_ops import normalize
 from config.constants import TOWER_DIM
 
@@ -72,7 +72,7 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
             added_covers.add(cover["cover_id"])
 
     cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
-    cover_id_tensors = torch.vstack([torch.tensor(process_item_id(cid)) for cid in cover_ids])
+    cover_id_tensors = torch.vstack([torch.tensor(cid) for cid in cover_ids])
     with torch.no_grad():
         tower_embeddings_tensor_raw = item_tower(cover_tensors, cover_id_tensors)
         tower_embeddings_tensor = normalize(tower_embeddings_tensor_raw)
