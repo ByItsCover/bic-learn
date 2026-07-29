@@ -1,6 +1,6 @@
 import asyncio
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 import logging
 from helpers.datasets import HotCoversDataSet, FeedbackDataSet
 from helpers.db_tables import get_db, get_cover_table, get_user_table, get_feedback_table
@@ -43,15 +43,13 @@ async def full_train(
 
     cover_table = await cover_table_task
     hot_dataset = HotCoversDataSet(cover_table, covers_map=hot_covers_map)
-    hot_dataloader = DataLoader(hot_dataset, batch_size=1, shuffle=False)
-
     feedback_table = await feedback_table_task
     feedback_dataset = FeedbackDataSet(feedback_table, cover_table)
-    feedback_dataloader = DataLoader(feedback_dataset, batch_size=1, shuffle=False)
+    full_dataset = ConcatDataset([hot_dataset, feedback_dataset])
+    dataloader = DataLoader(full_dataset, batch_size=1, shuffle=False)
 
     await embed_covers_task
-    train_models(user_tower, item_tower, hot_dataloader, epochs, user_lr, item_lr)
-    train_models(user_tower, item_tower, feedback_dataloader, epochs, user_lr, item_lr)
+    train_models(user_tower, item_tower, dataloader, epochs, user_lr, item_lr)
 
     update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
     user_table = await user_table_task
