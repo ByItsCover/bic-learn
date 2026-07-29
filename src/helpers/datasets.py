@@ -36,7 +36,7 @@ class HotCoversDataSet(Dataset):
         self.default_user_id = uuid.UUID(int=0)
         self.default_user = self._get_default_user()
         self.rating_arr = torch.tensor([self.max_rating])
-        self.df: Permutation | None = None
+        self.perm: Permutation | None = None
 
     def __len__(self):
         return len(self.covers_map)
