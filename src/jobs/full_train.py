@@ -2,8 +2,8 @@ import asyncio
 import torch
 from torch.utils.data import DataLoader
 import logging
-from helpers.datasets import PopularCoversDataSet
-from helpers.db_tables import get_db, get_cover_table, get_user_table
+from helpers.datasets import HotCoversDataSet, FeedbackDataSet
+from helpers.db_tables import get_db, get_cover_table, get_user_table, get_feedback_table
 from helpers.models import UserTower, ItemTower, train_models, save_models
 from helpers.hardcover import get_hardcover_client, get_popular_covers, get_trending_covers, get_hot_covers_map
 from helpers.embed_call import get_lambda_client, embed_covers
@@ -29,8 +29,8 @@ async def full_train(
     db = await db_task
     cover_table_task = asyncio.create_task(get_cover_table(db))
     user_table_task = asyncio.create_task(get_user_table(db))
+    feedback_table_task = asyncio.create_task(get_feedback_table(db))
 
-    cover_table = await cover_table_task
     popular_covers = await popular_covers_task
     trending_covers = await trending_covers_task
     hot_covers_map = get_hot_covers_map(popular_covers, trending_covers)
@@ -38,14 +38,20 @@ async def full_train(
     lambda_client = get_lambda_client(aws_region)
     embed_covers_task = asyncio.create_task(embed_covers(hot_covers, lambda_client, embed_lambda))
 
-    dataset = PopularCoversDataSet(cover_table, covers_map=hot_covers_map)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-
     user_tower = UserTower()
     item_tower = ItemTower()
 
+    cover_table = await cover_table_task
+    hot_dataset = HotCoversDataSet(cover_table, covers_map=hot_covers_map)
+    hot_dataloader = DataLoader(hot_dataset, batch_size=1, shuffle=False)
+
+    feedback_table = await feedback_table_task
+    feedback_dataset = FeedbackDataSet(feedback_table, cover_table)
+    feedback_dataloader = DataLoader(feedback_dataset, batch_size=1, shuffle=False)
+
     await embed_covers_task
-    train_models(user_tower, item_tower, dataloader, epochs, user_lr, item_lr)
+    train_models(user_tower, item_tower, hot_dataloader, epochs, user_lr, item_lr)
+    train_models(user_tower, item_tower, feedback_dataloader, epochs, user_lr, item_lr)
 
     update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
     user_table = await user_table_task
