@@ -8,18 +8,17 @@ from enum import Enum
 import uuid
 from helpers.db_tables import Feedback
 from helpers.hardcover import CoverRecord
+from helpers.tensor_ops import process_user_id
 from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM
 
 
 class FeedbackMap(tuple[int, int], Enum):
     Rating = (0, 3)
 
-def process_user_id(user_id: uuid.UUID) -> torch.Tensor:
-    bytes_copy = bytearray(user_id.bytes_le)
-    return (
-        torch.frombuffer(bytes_copy, dtype=torch.int32)
-        .to(dtype=torch.float32).unsqueeze(0)
-    )
+class CoverBackdate(LanceModel):
+    cover_id: int
+    cover_embedding: Vector(CLIP_DIM)  # pyright: ignore[reportInvalidTypeForm]
+
 
 class HotCoversDataSet(Dataset):
     def __init__(
@@ -70,9 +69,6 @@ class HotCoversDataSet(Dataset):
 
         return self.default_user, item_arr, item_id_arr, rating_arr, min_rating_arr, max_rating_arr
 
-class CoverBackdate(LanceModel):
-    cover_id: int
-    cover_embedding: Vector(CLIP_DIM)  # pyright: ignore[reportInvalidTypeForm]
 
 class FeedbackDataSet(Dataset):
     def __init__(

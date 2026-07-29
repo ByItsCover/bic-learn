@@ -8,6 +8,7 @@ import logging
 from helpers.models import UserTower, ItemTower
 from helpers.db_tables import User, users_adapter
 from helpers.datasets import process_user_id
+from helpers.tensor_ops import normalize
 from config.constants import TOWER_DIM
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,8 @@ def update_all_users_sync(user_table: Table, user_tower: UserTower):
 
     user_tensors = torch.vstack([process_user_id(uid) for uid in user_ids])
     with torch.no_grad():
-        user_embeddings_tensor = user_tower(user_tensors)
+        user_embeddings_tensor_raw = user_tower(user_tensors)
+        user_embeddings_tensor = normalize(user_embeddings_tensor_raw)
         logger.info("User update shape: %s", user_embeddings_tensor.shape)
 
     user_embedding_list = torch.unbind(user_embeddings_tensor, dim=0)
@@ -72,7 +74,8 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
     cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
     cover_id_tensors = torch.vstack([torch.tensor([cid]) for cid in cover_ids])
     with torch.no_grad():
-        tower_embeddings_tensor = item_tower(cover_tensors, cover_id_tensors)
+        tower_embeddings_tensor_raw = item_tower(cover_tensors, cover_id_tensors)
+        tower_embeddings_tensor = normalize(tower_embeddings_tensor_raw)
         logger.info("Cover update shape: %s", tower_embeddings_tensor.shape)
 
     tower_embedding_list = torch.unbind(tower_embeddings_tensor, dim=0)
