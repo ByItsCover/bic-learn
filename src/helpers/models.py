@@ -101,12 +101,13 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     )
 
     item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
+    item_id_input_tensor = torch.ones((2, ITEM_ID_DIM), dtype=torch.float32)
     item_tower_path = os.path.join(model_dir, "item_tower.onnx")
     torch.onnx.export(
         item_tower,
-        (item_input_tensor),
+        (item_input_tensor, item_id_input_tensor),
         item_tower_path,
-        input_names=['items'],
+        input_names=['items', 'ids'],
         output_names=['embeddings'],
         dynamic_shapes=({0: torch.export.Dim.DYNAMIC},),
         external_data=False
