@@ -72,7 +72,7 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
             added_covers.add(cover["cover_id"])
 
     cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
-    cover_id_tensors = torch.vstack([torch.tensor(cid) for cid in cover_ids])
+    cover_id_tensors = torch.tensor(cover_ids)
     with torch.no_grad():
         tower_embeddings_tensor_raw = item_tower(cover_tensors, cover_id_tensors)
         tower_embeddings_tensor = normalize(tower_embeddings_tensor_raw)
