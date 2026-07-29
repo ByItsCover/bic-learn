@@ -1,29 +1,49 @@
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM
+from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_DIM, HIDDEN_DIM
 
 logger = logging.getLogger(__name__)
 
 
 class UserTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM, hidden_dim: int = HIDDEN_DIM):
         super().__init__()
-        self.layer_1 = torch.nn.Linear(input_dim, output_dim)
+        #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
+        self.tower = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, output_dim),
+        )
 
     def forward(self, x: torch.Tensor):
-        out = self.layer_1(x)
+        out = self.tower(x)
         return out
 
 class ItemTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = CLIP_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM, id_dim: int = ITEM_ID_DIM, hidden_dim: int = HIDDEN_DIM):
         super().__init__()
-        self.layer_1 = torch.nn.Linear(input_dim, output_dim)
+        #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
+        self.tower = nn.Sequential(
+            nn.Linear(embed_dim + id_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, output_dim),
+        )
 
-    def forward(self, x: torch.Tensor):
-        out = self.layer_1(x)
+    def forward(self, embed_x: torch.Tensor, id_x: torch.Tensor):
+        x = torch.concat([embed_x, id_x], dim=-1)
+        out = self.tower(x)
         return out
 
 def train_models(user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader, epochs: int, user_lr: float, item_lr: float):
@@ -39,11 +59,11 @@ def train_models(user_tower: UserTower, item_tower: ItemTower, dataloader: DataL
 
         logger.info("Epoch %s", epoch)
         for batch_ind, batch in enumerate(tqdm(dataloader)):
-            user, item, rating, min_rating, max_rating = batch
+            user, item, item_id, rating, min_rating, max_rating = batch
             user_optimizer.zero_grad()
             item_optimizer.zero_grad()
             user_pred = user_tower(user)
-            item_pred = item_tower(item)
+            item_pred = item_tower(item, item_id)
 
             ratings_pred = ((min_rating + 1 + (user_pred / user_pred.norm(dim=-1, keepdim=True))
                              @ (item_pred / item_pred.norm(dim=-1, keepdim=True)).T)

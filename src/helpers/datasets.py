@@ -59,15 +59,16 @@ class HotCoversDataSet(Dataset):
             )
             self.perm = permutation
 
-    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         self._ensure_permutation()
         cover = self.perm.__getitem__(idx)[0]
         item_arr = torch.tensor(cover[self.embedding_field])
+        item_id_arr = torch.tensor([cover[self.id_field]])
         rating_arr = torch.tensor([self.covers_map[cover[self.id_field]][1]])
         min_rating_arr = torch.tensor([self.min_rating])
         max_rating_arr = torch.tensor([self.max_rating])
 
-        return self.default_user, item_arr, rating_arr, min_rating_arr, max_rating_arr
+        return self.default_user, item_arr, item_id_arr, rating_arr, min_rating_arr, max_rating_arr
 
 class CoverBackdate(LanceModel):
     cover_id: int
@@ -95,7 +96,7 @@ class FeedbackDataSet(Dataset):
             .select([self.uid_field, self.cid_field, "type", "score", "timestamp"])
         ).to_pydantic(Feedback)
 
-    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         feedback = self.feedback_list[idx]
         cover = (
             self.cover_table.search()
@@ -106,8 +107,9 @@ class FeedbackDataSet(Dataset):
 
         user_arr = process_user_id(feedback.user_id)
         item_arr = torch.tensor(cover.cover_embedding)
+        item_id_arr = torch.tensor([cover.cover_id])
         rating_arr = torch.tensor([feedback.score])
         min_rating_arr = torch.tensor([FeedbackMap[feedback.type.value].value[0]])
         max_rating_arr = torch.tensor([FeedbackMap[feedback.type.value].value[1]])
 
-        return user_arr, item_arr, rating_arr, min_rating_arr, max_rating_arr
+        return user_arr, item_arr, item_id_arr, rating_arr, min_rating_arr, max_rating_arr
