@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_DIM, HIDDEN_DIM, DROPOUT
+from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_BUCKET_SIZE, HIDDEN_DIM, DROPOUT
 
 logger = logging.getLogger(__name__)
 
@@ -28,21 +28,25 @@ class UserTower(torch.nn.Module):
         return out
 
 class ItemTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM, id_dim: int = ITEM_ID_DIM, hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT):
+    def __init__(
+            self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM,
+            id_bucket_size: int = ITEM_ID_BUCKET_SIZE, hidden_dim: int = HIDDEN_DIM,
+            dropout: float = DROPOUT
+    ):
         super().__init__()
-        #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
-        self.tower = nn.Sequential(
-            nn.Linear(embed_dim + id_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=dropout),
-            nn.Linear(hidden_dim, hidden_dim),
+        self.features_layer = nn.Sequential(
+            nn.Linear(embed_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
+        self.id_layer = nn.Embedding(id_bucket_size, output_dim)
+        self.tower = nn.Linear(output_dim * 2, output_dim)
 
-    def forward(self, embed_x: torch.Tensor, id_x: torch.Tensor):
-        x = torch.concat([embed_x, id_x], dim=-1)
+    def forward(self, features_x: torch.Tensor, id_x: torch.Tensor):
+        feature_embed = self.features_layer(features_x)
+        id_embed = self.id_layer(id_x)
+        x = torch.concat([feature_embed, id_embed], dim=-1)
         out = self.tower(x)
         return out
 
@@ -101,7 +105,7 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     )
 
     item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
-    item_id_input_tensor = torch.ones((2, ITEM_ID_DIM), dtype=torch.float32)
+    item_id_input_tensor = torch.ones(2, dtype=torch.int32)
     item_tower_path = os.path.join(model_dir, "item_tower.onnx")
     torch.onnx.export(
         item_tower,
@@ -109,6 +113,9 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
         item_tower_path,
         input_names=['items', 'ids'],
         output_names=['embeddings'],
-        dynamic_shapes=({0: torch.export.Dim.DYNAMIC},),
+        dynamic_shapes=(
+            {0: torch.export.Dim.DYNAMIC},
+            {0: torch.export.Dim.DYNAMIC},
+        ),
         external_data=False
     )

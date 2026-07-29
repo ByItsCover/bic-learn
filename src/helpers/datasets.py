@@ -8,7 +8,7 @@ from enum import Enum
 import uuid
 from helpers.db_tables import Feedback
 from helpers.hardcover import CoverRecord
-from helpers.tensor_ops import process_user_id
+from helpers.tensor_ops import process_user_id, id_hash
 from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM
 
 
@@ -62,7 +62,7 @@ class HotCoversDataSet(Dataset):
         self._ensure_permutation()
         cover = self.perm.__getitem__(idx)[0]
         item_arr = torch.tensor(cover[self.embedding_field])
-        item_id_arr = torch.tensor([cover[self.id_field]])
+        item_id_arr = torch.tensor(id_hash(cover[self.id_field]))
         rating_arr = torch.tensor([self.covers_map[cover[self.id_field]][1]])
         min_rating_arr = torch.tensor([self.min_rating])
         max_rating_arr = torch.tensor([self.max_rating])
@@ -103,7 +103,7 @@ class FeedbackDataSet(Dataset):
 
         user_arr = process_user_id(feedback.user_id)
         item_arr = torch.tensor(cover.cover_embedding)
-        item_id_arr = torch.tensor([cover.cover_id])
+        item_id_arr = torch.tensor(id_hash(cover.cover_id))
         rating_arr = torch.tensor([feedback.score])
         min_rating_arr = torch.tensor([FeedbackMap[feedback.type.value].value[0]])
         max_rating_arr = torch.tensor([FeedbackMap[feedback.type.value].value[1]])
