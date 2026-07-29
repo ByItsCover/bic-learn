@@ -4,22 +4,22 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_DIM, HIDDEN_DIM
+from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, ITEM_ID_DIM, HIDDEN_DIM, DROPOUT
 
 logger = logging.getLogger(__name__)
 
 
 class UserTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM, hidden_dim: int = HIDDEN_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM, hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT):
         super().__init__()
         #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
         self.tower = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
 
@@ -28,16 +28,16 @@ class UserTower(torch.nn.Module):
         return out
 
 class ItemTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM, id_dim: int = ITEM_ID_DIM, hidden_dim: int = HIDDEN_DIM):
+    def __init__(self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM, id_dim: int = ITEM_ID_DIM, hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT):
         super().__init__()
         #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
         self.tower = nn.Sequential(
             nn.Linear(embed_dim + id_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
 
