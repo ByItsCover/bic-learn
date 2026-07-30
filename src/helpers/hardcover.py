@@ -139,11 +139,3 @@ async def get_trending_covers(session: AsyncClientSession, trending_count: int) 
             logger.info("Skipping cover with id: %s", book["default_cover_edition"]["id"])
 
     return order_covers(covers, id_list)
-
-def get_hot_covers_map(
-        popular_covers: list[CoverRecord], trending_covers: list[CoverRecord],
-        popular_score: float = 3.0, trending_score: float = 2.0
-    ) -> dict[int, tuple[CoverRecord, float]]:
-    popular_covers_map = {cover.id: (cover, popular_score) for cover in popular_covers}
-    trending_covers_map = {cover.id: (cover, trending_score) for cover in trending_covers}
-    return popular_covers_map | trending_covers_map
