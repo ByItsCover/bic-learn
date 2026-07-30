@@ -6,7 +6,7 @@ from helpers.datasets import HotCoversDataSet, FeedbackDataSet
 from helpers.db_tables import get_db, get_cover_table, get_user_table, get_feedback_table
 from helpers.models import UserTower, ItemTower, train_models, save_models
 from helpers.hardcover import get_hardcover_client, get_popular_covers, get_trending_covers
-from helpeprs.feedback_ops import get_hot_covers_map
+from helpers.feedback_ops import get_hot_covers_map
 from helpers.embed_call import get_lambda_client, embed_covers
 from helpers.inference import update_all_users, update_all_covers
 
