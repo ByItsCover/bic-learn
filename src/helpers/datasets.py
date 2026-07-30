@@ -9,11 +9,9 @@ import uuid
 from helpers.db_tables import Feedback
 from helpers.hardcover import CoverRecord
 from helpers.tensor_ops import process_user_id
+from helpers.feedback_ops import FeedbackMap
 from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM
 
-
-class FeedbackMap(tuple[int, int], Enum):
-    Rating = (0, 3)
 
 class CoverBackdate(LanceModel):
     cover_id: int
