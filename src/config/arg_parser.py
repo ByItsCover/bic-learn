@@ -22,12 +22,12 @@ def parse_args(args) -> argparse.Namespace:
 
     parser.add_argument('--model_root_dir', action=EnvDefault, envvar='MODEL_ROOT_DIR')
     parser.add_argument('--epochs', action=EnvDefault, envvar='EPOCHS', type=int, default=10)
-    parser.add_argument('--batch_size', action=EnvDefault, envvar='BATCH_SIZE', type=int, default=2)
+    parser.add_argument('--batch_size', action=EnvDefault, envvar='BATCH_SIZE', type=int, default=512)
     parser.add_argument('--shuffle', action=EnvDefault, envvar='SHUFFLE', type=bool, default=True)
     parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=1e-3)
     parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=1e-3)
 
-    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=100)
-    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=100)
+    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=25)
+    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=25)
 
     return parser.parse_args(args)
