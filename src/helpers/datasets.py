@@ -4,7 +4,6 @@ from torch.utils.data import Dataset
 from lancedb import Table
 from lancedb.permutation import Permutation, permutation_builder
 from lancedb.pydantic import LanceModel, Vector
-from enum import Enum
 import uuid
 from helpers.db_tables import Feedback
 from helpers.hardcover import CoverRecord
