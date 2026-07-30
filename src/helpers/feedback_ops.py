@@ -1,3 +1,4 @@
+from enum import Enum
 from helpers.hardcover import CoverRecord
 from config.constants import HOT_FEEDBACK_TYPE
 
