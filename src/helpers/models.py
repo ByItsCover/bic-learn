@@ -1,29 +1,43 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, USER_ID_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
+from config.constants import TOWER_DIM, CLIP_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
+from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
 
 
 class UserTower(torch.nn.Module):
-    def __init__(self, output_dim: int = TOWER_DIM, input_dim: int = USER_ID_DIM, hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT):
+    def __init__(
+            self, output_dim: int = TOWER_DIM, max_item_count: int = MAX_ITEM_COUNT,
+            id_bucket_count: int = ITEM_ID_BUCKET_COUNT, hidden_dim: int = HIDDEN_DIM,
+            dropout: float = DROPOUT
+    ):
         super().__init__()
-        #self.layer_1 = torch.nn.Linear(input_dim, output_dim)
+        self.id_bucket_count = id_bucket_count
+        self.q_vocab_size = (max_item_count // self.id_bucket_count) + 1
+        self.r_vocab_size = self.id_bucket_count
+        self.q_layer = nn.Embedding(self.q_vocab_size, output_dim)
+        self.r_layer = nn.Embedding(self.r_vocab_size, output_dim)
         self.tower = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=dropout),
-            nn.Linear(hidden_dim, hidden_dim),
+            nn.Linear(output_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, id_x: torch.Tensor):
+        quotient_id = torch.floor_divide(id_x, self.id_bucket_count)
+        remainder_id = torch.remainder(id_x, self.id_bucket_count)
+        quotient_embed = self.q_layer(quotient_id)
+        remainder_embed = self.r_layer(remainder_id)
+
+        x = quotient_embed * remainder_embed
+
         out = self.tower(x)
         return out
 
@@ -45,7 +59,12 @@ class ItemTower(torch.nn.Module):
         self.r_vocab_size = self.id_bucket_count
         self.q_layer = nn.Embedding(self.q_vocab_size, output_dim)
         self.r_layer = nn.Embedding(self.r_vocab_size, output_dim)
-        self.tower = nn.Linear(output_dim * 2, output_dim)
+        self.tower = nn.Sequential(
+            nn.Linear(output_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout),
+            nn.Linear(hidden_dim, output_dim),
+        )
 
     def forward(self, features_x: torch.Tensor, id_x: torch.Tensor):
         feature_embed = self.features_layer(features_x)
@@ -74,15 +93,19 @@ def train_models(user_tower: UserTower, item_tower: ItemTower, dataloader: DataL
 
         logger.info("Epoch %s", epoch)
         for batch_ind, batch in enumerate(tqdm(dataloader)):
-            user, item, item_id, rating, min_rating, max_rating = batch
+            user_id, item, item_id, rating, min_rating, max_rating = batch
             user_optimizer.zero_grad()
             item_optimizer.zero_grad()
-            user_pred = user_tower(user)
+            user_pred = user_tower(user_id)
             item_pred = item_tower(item, item_id)
 
-            ratings_pred = ((min_rating + 1 + (user_pred / user_pred.norm(dim=-1, keepdim=True))
-                             @ (item_pred / item_pred.norm(dim=-1, keepdim=True)).T)
+            ratings_pred = ((min_rating + 1
+                             + F.cosine_similarity(
+                                normalize(user_pred),
+                                normalize(item_pred), dim=-1
+                            ).unsqueeze(0).T)
                             * (max_rating / 2))
+
             loss = torch.square(rating - ratings_pred).mean()
             logger.info("Batch %s loss: %s", batch_ind, loss.item())
 
@@ -103,7 +126,7 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     user_tower.eval()
     item_tower.eval()
 
-    user_input_tensor = torch.ones((2, USER_ID_DIM), dtype=torch.float32)
+    user_input_tensor = torch.ones(2, dtype=torch.float32)
     user_tower_path = os.path.join(model_dir, "user_tower.onnx")
     torch.onnx.export(
         user_tower,
