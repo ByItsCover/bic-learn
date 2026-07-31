@@ -114,8 +114,10 @@ def get_feedback_table_sync(db: DBConnection) -> Table:
 
     user_id_stats = feedback_table.index_stats("user_id_idx")
     cover_id_stats = feedback_table.index_stats("cover_id_idx")
-    if not user_id_stats or not cover_id_stats:
+    type_stats = feedback_table.index_stats("type_idx")
+    if not user_id_stats or not cover_id_stats or not type_stats:
         feedback_table.create_index("user_id", config=BTree(), name="user_id_idx")
         feedback_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
+        feedback_table.create_index("type", config=BTree(), name="type_idx")
 
     return feedback_table
