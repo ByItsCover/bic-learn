@@ -70,6 +70,8 @@ async def get_user_table(db: DBConnection) -> Table:
     return await asyncio.to_thread(get_user_table_sync, db)
 
 def get_user_table_sync(db: DBConnection) -> Table:
+    db.drop_table(USER_TABLE_NAME)
+    
     user_schema = pa.schema(
         [
             pa.field("user_id", pa.uuid(), nullable=False),
@@ -80,6 +82,9 @@ def get_user_table_sync(db: DBConnection) -> Table:
         USER_TABLE_NAME,
         schema=user_schema,
         exist_ok=True,
+        storage_options={
+            "new_table_enable_stable_row_ids": "true"
+        }
     )
 
     id_stats = user_table.index_stats("user_id_idx")
