@@ -10,7 +10,7 @@ from enum import Enum
 from datetime import datetime
 from typing import Optional, Annotated
 import uuid
-from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME, FEEDBACK_TABLE_NAME
+from config.constants import TOWER_DIM, NEW_TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME, FEEDBACK_TABLE_NAME
 
 
 class Cover(LanceModel):
@@ -64,6 +64,9 @@ def get_cover_table_sync(db: DBConnection) -> Table:
     if "cover_embedding" not in cover_schema.names:
         cover_table.alter_columns({"path": "embedding", "rename": "cover_embedding"})
 
+    cover_table.drop_columns(["tower_embedding"])
+    cover_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({NEW_TOWER_DIM}, Float32)')"})
+
     return cover_table
 
 async def get_user_table(db: DBConnection) -> Table:
@@ -85,6 +88,9 @@ def get_user_table_sync(db: DBConnection) -> Table:
     id_stats = user_table.index_stats("user_id_idx")
     if not id_stats:
         user_table.create_index("user_id", config=BTree(), name="user_id_idx")
+
+    user_table.drop_columns(["tower_embedding"])
+    user_table.add_columns({"tower_embedding": f"arrow_cast(NULL, 'FixedSizeList({NEW_TOWER_DIM}, Float32)')"})
 
     return user_table
 
