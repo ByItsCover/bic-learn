@@ -45,8 +45,9 @@ async def full_train(
 
     cover_table = await cover_table_task
     hot_dataset = HotCoversDataSet(cover_table, covers_map=hot_covers_map)
+    user_table = await user_table_task
     feedback_table = await feedback_table_task
-    feedback_dataset = FeedbackDataSet(feedback_table, cover_table)
+    feedback_dataset = FeedbackDataSet(feedback_table, user_table, cover_table)
     full_dataset = ConcatDataset([hot_dataset, feedback_dataset])
     dataloader = DataLoader(full_dataset, batch_size=batch_size, shuffle=shuffle)
 
@@ -54,7 +55,6 @@ async def full_train(
     train_models(user_tower, item_tower, dataloader, epochs, user_lr, item_lr)
 
     update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
-    user_table = await user_table_task
     update_all_users_task = asyncio.create_task(update_all_users(user_table, user_tower))
 
     await update_all_users_task
