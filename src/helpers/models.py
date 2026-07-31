@@ -126,7 +126,7 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     user_tower.eval()
     item_tower.eval()
 
-    user_input_tensor = torch.ones(2, dtype=torch.float32)
+    user_input_tensor = torch.ones(2, dtype=torch.int32)
     user_tower_path = os.path.join(model_dir, "user_tower.onnx")
     torch.onnx.export(
         user_tower,
