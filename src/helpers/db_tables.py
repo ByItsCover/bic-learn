@@ -6,8 +6,6 @@ from lancedb.index import BTree
 from lancedb.pydantic import LanceModel, Vector
 from pydantic import PlainSerializer, TypeAdapter
 import pyarrow as pa
-from enum import Enum
-from datetime import datetime
 from typing import Optional, Annotated
 import uuid
 from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME, FEEDBACK_TABLE_NAME
@@ -26,16 +24,6 @@ class User(LanceModel):
     tower_embedding: Optional[Vector(TOWER_DIM)] = None  # pyright: ignore[reportInvalidTypeForm, reportInvalidTypeArguments]
 
 users_adapter = TypeAdapter(list[User])
-
-class FeedbackEnum(str, Enum):
-    rating = 'Rating'
-
-class Feedback(LanceModel):
-    user_id: Annotated[uuid.UUID, PlainSerializer(lambda x: x.bytes, return_type=bytes)]
-    cover_id: int
-    type: FeedbackEnum
-    score: int
-    timestamp: datetime
 
 
 async def get_db(uri: str) -> DBConnection:
@@ -70,8 +58,6 @@ async def get_user_table(db: DBConnection) -> Table:
     return await asyncio.to_thread(get_user_table_sync, db)
 
 def get_user_table_sync(db: DBConnection) -> Table:
-    db.drop_table(USER_TABLE_NAME)
-    
     user_schema = pa.schema(
         [
             pa.field("user_id", pa.uuid(), nullable=False),

@@ -7,7 +7,6 @@ import uuid
 import logging
 from helpers.models import UserTower, ItemTower
 from helpers.db_tables import User, users_adapter
-from helpers.datasets import process_user_id
 from helpers.tensor_ops import normalize
 from config.constants import TOWER_DIM
 
@@ -28,23 +27,29 @@ def update_all_users_sync(user_table: Table, user_tower: UserTower):
     user_table.checkout_latest()
 
     default_user = uuid.UUID(int=0)
-    user_ids = [default_user]
-    db_user_dict = user_table.search().select(["user_id"]).to_list()
+    default_user_id = 0
+    users = [default_user]
+    user_row_ids = [default_user_id]
+    db_user_dict = (user_table.search()
+                    .with_row_id(True)
+                    .select(["user_id"])
+    ).to_list()
     for user in db_user_dict:
         if user["user_id"] == default_user:
             continue;
-        user_ids.append(user["user_id"])
+        user_row_ids.append(user["_rowid"] + 1)
+        users.append(user["user_id"])
 
-    user_tensors = torch.vstack([process_user_id(uid) for uid in user_ids])
+    user_id_tensors = torch.tensor(user_row_ids)
     with torch.no_grad():
-        user_embeddings_tensor_raw = user_tower(user_tensors)
+        user_embeddings_tensor_raw = user_tower(user_id_tensors)
         user_embeddings_tensor = normalize(user_embeddings_tensor_raw)
         logger.info("User update shape: %s", user_embeddings_tensor.shape)
 
     user_embedding_list = torch.unbind(user_embeddings_tensor, dim=0)
     user_list = [
         User(user_id=uid, tower_embedding=tensor)
-        for uid, tensor in zip(user_ids, user_embedding_list)
+        for uid, tensor in zip(users, user_embedding_list)
     ]
 
     (
