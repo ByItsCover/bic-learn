@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, ID_HIDDEN_DIM, DROPOUT
+from config.constants import TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT, ID_WEIGHT_INIT, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -44,35 +44,39 @@ class UserTower(torch.nn.Module):
 class ItemTower(torch.nn.Module):
     def __init__(
             self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM,
-            max_item_count: int = MAX_ITEM_COUNT, id_bucket_count: int = ITEM_ID_BUCKET_COUNT,
-            hidden_dim: int = HIDDEN_DIM, id_hidden_dim: int = ID_HIDDEN_DIM, dropout: float = DROPOUT
+            feature_weight_init: float = FEATURE_WEIGHT_INIT,
+            id_weight_init: float = ID_WEIGHT_INIT,
+            max_item_count: int = MAX_ITEM_COUNT,
+            id_bucket_count: int = ITEM_ID_BUCKET_COUNT,
+            hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT
     ):
         super().__init__()
         self.features_layer = nn.Sequential(
             nn.Linear(embed_dim, hidden_dim),
             nn.ReLU(),
+            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
+        self.features_weight = nn.Parameter(torch.tensor(feature_weight_init))
+
         self.id_bucket_count = id_bucket_count
         self.q_vocab_size = (max_item_count // self.id_bucket_count) + 1
         self.r_vocab_size = self.id_bucket_count
         self.q_layer = nn.Embedding(self.q_vocab_size, output_dim)
         self.r_layer = nn.Embedding(self.r_vocab_size, output_dim)
-        self.id_layer = nn.Sequential(
-            nn.Linear(output_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=dropout),
-            nn.Linear(hidden_dim, id_hidden_dim),
-        )
+        self.id_layer = nn.Dropout(p=dropout)
+        self.id_weight = nn.Parameter(torch.tensor(id_weight_init))
+
         self.tower = nn.Sequential(
-            nn.Linear(output_dim + id_hidden_dim, hidden_dim),
+            nn.Linear(output_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
 
     def forward(self, features_x: torch.Tensor, id_x: torch.Tensor):
-        feature_embed = self.features_layer(features_x)
+        features_embed = self.features_layer(features_x)
+        weighted_features = self.features_weight / (self.features_weight + self.id_weight) * features_embed
 
         quotient_id = torch.floor_divide(id_x, self.id_bucket_count)
         remainder_id = torch.remainder(id_x, self.id_bucket_count)
@@ -80,8 +84,9 @@ class ItemTower(torch.nn.Module):
         remainder_embed = self.r_layer(remainder_id)
 
         id_embed = self.id_layer(quotient_embed * remainder_embed)
-        x = torch.concat([feature_embed, id_embed], dim=-1)
+        weighted_id = self.id_weight / (self.features_weight + self.id_weight) * id_embed
 
+        x = weighted_features + weighted_id
         out = self.tower(x)
         return out
 
@@ -138,6 +143,10 @@ def train_models(
         if 0 < early_stop <= not_lose_streak:
             logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
             break;
+
+    for name, param in item_tower.named_parameters():
+        if name.endswith("_weight"):
+            logger.info("Item tower final %s: %s", name, str(param.data))
 
     logger.info("Training end")
 
