@@ -92,11 +92,10 @@ class ItemTower(torch.nn.Module):
 
 def train_models(
         user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
-        epochs: int, early_stop: int, user_lr: float, item_lr: float,
-        user_weight_decay: float, item_weight_decay: float
+        epochs: int, early_stop: int, user_lr: float, item_lr: float
 ):
-    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr, weight_decay=user_weight_decay)
-    item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr, weight_decay=item_weight_decay)
+    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
+    item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr)
     user_tower.train()
     item_tower.train()
 

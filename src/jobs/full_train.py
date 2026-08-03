@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 async def full_train(
         aws_region: str, db_uri: str, embed_lambda: str, hardcover_token: str,
-        model_dir: str, epochs: int, early_stop: int, batch_size: int, shuffle: bool, user_lr: float,
-        item_lr: float, user_weight_decay: float, item_weight_decay: float, popular_count: int, trending_count: int
+        model_dir: str, epochs: int, early_stop: int, batch_size: int, shuffle: bool,
+        user_lr: float, item_lr: float, popular_count: int, trending_count: int
     ):
     logger.info("CUDA availability: %s", torch.cuda.is_available())
     logger.info("CUDA device name: %s", torch.cuda.get_device_name(0))
@@ -53,8 +53,8 @@ async def full_train(
 
     await embed_covers_task
     train_models(
-        user_tower, item_tower, dataloader, epochs, early_stop,
-        user_lr, item_lr, user_weight_decay, item_weight_decay
+        user_tower, item_tower, dataloader,
+        epochs, early_stop, user_lr, item_lr
     )
 
     update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
