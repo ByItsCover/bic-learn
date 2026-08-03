@@ -31,8 +31,7 @@ if __name__ == '__main__':
             params.aws_region, params.db_uri, params.embed_lambda_name,
             params.hardcover_token, params.model_root_dir, params.epochs,
             params.early_stop, params.batch_size, params.shuffle, params.user_lr,
-            params.item_lr, params.user_weight_decay, params.item_weight_decay,
-            params.popular_count, params.trending_count
+            params.item_lr, params.popular_count, params.trending_count
         ))
     elif params.job_type == JobType.create_tables:
         loop.run_until_complete(create_tables(params.db_uri))
