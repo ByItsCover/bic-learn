@@ -25,8 +25,8 @@ def parse_args(args) -> argparse.Namespace:
     parser.add_argument('--batch_size', action=EnvDefault, envvar='BATCH_SIZE', type=int, default=256)
     parser.add_argument('--shuffle', action=EnvDefault, envvar='SHUFFLE', type=bool, default=True)
     parser.add_argument('--early_stop', action=EnvDefault, envvar='EARLY_STOP', type=int, default=7)
-    parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=0.001)
-    parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=0.0005)
+    parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=0.01)
+    parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=0.005)
     parser.add_argument('--user_weight_decay', action=EnvDefault, envvar='USER_WEIGHT_DECAY', type=float, default=0.01)
     parser.add_argument('--item_weight_decay', action=EnvDefault, envvar='ITEM_WEIGHT_DECAY', type=float, default=0.05)
 
