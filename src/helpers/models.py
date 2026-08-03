@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
+from config.constants import TOWER_DIM, CLIP_DIM, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, ID_HIDDEN_DIM, DROPOUT
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -45,13 +45,12 @@ class ItemTower(torch.nn.Module):
     def __init__(
             self, output_dim: int = TOWER_DIM, embed_dim: int = CLIP_DIM,
             max_item_count: int = MAX_ITEM_COUNT, id_bucket_count: int = ITEM_ID_BUCKET_COUNT,
-            hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT
+            hidden_dim: int = HIDDEN_DIM, id_hidden_dim: int = ID_HIDDEN_DIM, dropout: float = DROPOUT
     ):
         super().__init__()
         self.features_layer = nn.Sequential(
             nn.Linear(embed_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
         )
         self.id_bucket_count = id_bucket_count
@@ -59,8 +58,14 @@ class ItemTower(torch.nn.Module):
         self.r_vocab_size = self.id_bucket_count
         self.q_layer = nn.Embedding(self.q_vocab_size, output_dim)
         self.r_layer = nn.Embedding(self.r_vocab_size, output_dim)
+        self.id_layer = nn.Sequential(
+            nn.Linear(output_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(p=dropout),
+            nn.Linear(hidden_dim, id_hidden_dim),
+        )
         self.tower = nn.Sequential(
-            nn.Linear(output_dim * 2, hidden_dim),
+            nn.Linear(output_dim + id_hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Dropout(p=dropout),
             nn.Linear(hidden_dim, output_dim),
@@ -74,17 +79,24 @@ class ItemTower(torch.nn.Module):
         quotient_embed = self.q_layer(quotient_id)
         remainder_embed = self.r_layer(remainder_id)
 
-        id_embed = quotient_embed * remainder_embed
+        id_embed = self.id_layer(quotient_embed * remainder_embed)
         x = torch.concat([feature_embed, id_embed], dim=-1)
 
         out = self.tower(x)
         return out
 
-def train_models(user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader, epochs: int, user_lr: float, item_lr: float):
-    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
-    item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr)
+def train_models(
+        user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
+        epochs: int, early_stop: int, user_lr: float, item_lr: float,
+        user_weight_decay: float, item_weight_decay: float
+):
+    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr, weight_decay=user_weight_decay)
+    item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr, weight_decay=item_weight_decay)
     user_tower.train()
     item_tower.train()
+
+    best_loss = None
+    not_lose_streak = 0
 
     logger.info("Training start")
 
@@ -116,6 +128,16 @@ def train_models(user_tower: UserTower, item_tower: ItemTower, dataloader: DataL
 
         avg_training_loss = total_training_loss / len(dataloader)
         logger.info("Average loss for epoch %s: %s", epoch, avg_training_loss)
+
+        if best_loss is None or avg_training_loss < best_loss:
+            not_lose_streak = 0
+            best_loss = avg_training_loss
+        else:
+            not_lose_streak += 1
+
+        if 0 < early_stop <= not_lose_streak:
+            logger.info("Accuracy has not improved in", not_lose_streak, "rounds. Stopping early...")
+            break;
 
     logger.info("Training end")
 
