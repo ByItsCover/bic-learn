@@ -136,7 +136,7 @@ def train_models(
             not_lose_streak += 1
 
         if 0 < early_stop <= not_lose_streak:
-            logger.info("Accuracy has not improved in", not_lose_streak, "rounds. Stopping early...")
+            logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
             break;
 
     logger.info("Training end")
