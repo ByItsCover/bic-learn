@@ -5,7 +5,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 import logging
-from config.constants import TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT, ID_WEIGHT_INIT, MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM, DROPOUT
+from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
+                              ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
+                              MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT,
+                              HIDDEN_DIM, DROPOUT)
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -122,7 +125,9 @@ def train_models(
                             ).unsqueeze(0).T)
                             * (max_rating / 2))
 
-            loss = torch.square(rating - ratings_pred).mean()
+            ratings_loss = torch.square(rating - ratings_pred).mean()
+            weight_loss = ITEM_WEIGHT_DIFF_PENALTY * torch.abs(item_tower.features_weight - item_tower.id_weight)
+            loss = ratings_loss + weight_loss
             logger.info("Batch %s loss: %s", batch_ind, loss.item())
 
             loss.backward()
