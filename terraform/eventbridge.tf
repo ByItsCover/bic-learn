@@ -63,7 +63,7 @@ resource "aws_scheduler_schedule" "tune-users-schedule" {
     }
 
     input = jsonencode({
-      "JobName" : "full-train-job",
+      "JobName" : "tune-users-job",
       "JobDefinition" : aws_batch_job_definition.job.arn,
       "JobQueue" : local.batch_queue_arn,
       "ContainerOverrides" : {
