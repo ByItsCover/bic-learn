@@ -30,10 +30,10 @@ resource "aws_batch_job_definition" "job" {
       {
         name = var.efs_volume_name
         efsVolumeConfiguration = {
-          file_system_id     = local.rec_efs_system_id
-          transit_encryption = "ENABLED"
-          authorization_config = {
-            access_point_id = local.rec_efs_access_id
+          fileSystemId     = local.rec_efs_system_id
+          transitEncryption = "ENABLED"
+          authorizationConfig = {
+             accessPointId  = local.rec_efs_access_id
             iam             = "ENABLED"
           }
         }
