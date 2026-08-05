@@ -55,7 +55,7 @@ async def tune_users(
         update_user_list_task = asyncio.create_task(update_user_list(user_table, user_tower, user_id_list))
 
         await update_user_list_task
-        save_models(user_tower, item_tower, model_dir)
+        save_models(model_dir, user_tower=user_tower)
 
         log_run_task = asyncio.create_task(log_run(runlog_table, start_time))
         await log_run_task

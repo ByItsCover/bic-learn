@@ -3,12 +3,14 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing import Optional
 import os
 import logging
 from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
                               ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
                               MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT,
-                              HIDDEN_DIM, DROPOUT, DEFAULT_USER_OFFSET)
+                              HIDDEN_DIM, DROPOUT, DEFAULT_USER_OFFSET,
+                              FINE_TUNING_SHRINK_FACTOR)
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -158,9 +160,12 @@ def tune_user_model(
         user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
         epochs: int, early_stop: int, user_lr: float
 ) -> list[int]:
-    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
+    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr * FINE_TUNING_SHRINK_FACTOR)
     user_tower.train()
     item_tower.eval()
+
+    for param in item_tower.parameters():
+        param.requires_grad = False
 
     unique_ids = set()
     best_loss = None
@@ -209,46 +214,49 @@ def tune_user_model(
     logger.info("Training end. %s Users trained for", len(unique_ids))
     return list(unique_ids)
 
-def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
+def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tower: Optional[ItemTower] = None):
     if not os.path.exists(model_dir):
         raise FileNotFoundError(f"No such directory: {model_dir}")
 
-    user_tower.eval()
-    item_tower.eval()
+    if user_tower is not None:
+        user_tower.eval()
 
-    user_input_tensor = torch.ones(2, dtype=torch.int32)
-    user_tower_onnx_path = os.path.join(model_dir, "user_tower.onnx")
-    torch.onnx.export(
-        user_tower,
-        (user_input_tensor),
-        user_tower_onnx_path,
-        input_names=['users'],
-        output_names=['embeddings'],
-        dynamic_shapes=({0: torch.export.Dim.DYNAMIC},),
-        external_data=False
-    )
+        user_input_tensor = torch.ones(2, dtype=torch.int32)
+        user_tower_onnx_path = os.path.join(model_dir, "user_tower.onnx")
+        torch.onnx.export(
+            user_tower,
+            (user_input_tensor),
+            user_tower_onnx_path,
+            input_names=['users'],
+            output_names=['embeddings'],
+            dynamic_shapes=({0: torch.export.Dim.DYNAMIC},),
+            external_data=False
+        )
 
-    user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
-    torch.save(user_tower.state_dict(), user_tower_torch_path)
+        user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
+        torch.save(user_tower.state_dict(), user_tower_torch_path)
 
-    item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
-    item_id_input_tensor = torch.ones(2, dtype=torch.int32)
-    item_tower_onnx_path = os.path.join(model_dir, "item_tower.onnx")
-    torch.onnx.export(
-        item_tower,
-        (item_input_tensor, item_id_input_tensor),
-        item_tower_onnx_path,
-        input_names=['items', 'ids'],
-        output_names=['embeddings'],
-        dynamic_shapes=(
-            {0: torch.export.Dim.DYNAMIC},
-            {0: torch.export.Dim.DYNAMIC},
-        ),
-        external_data=False
-    )
+    if item_tower is not None:
+        item_tower.eval()
+        
+        item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
+        item_id_input_tensor = torch.ones(2, dtype=torch.int32)
+        item_tower_onnx_path = os.path.join(model_dir, "item_tower.onnx")
+        torch.onnx.export(
+            item_tower,
+            (item_input_tensor, item_id_input_tensor),
+            item_tower_onnx_path,
+            input_names=['items', 'ids'],
+            output_names=['embeddings'],
+            dynamic_shapes=(
+                {0: torch.export.Dim.DYNAMIC},
+                {0: torch.export.Dim.DYNAMIC},
+            ),
+            external_data=False
+        )
 
-    item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
-    torch.save(item_tower.state_dict(), item_tower_torch_path)
+        item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
+        torch.save(item_tower.state_dict(), item_tower_torch_path)
 
 def load_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
