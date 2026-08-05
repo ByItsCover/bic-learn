@@ -79,7 +79,7 @@ class FeedbackDataSet(Dataset):
         self.feedback_perm = self._load_feedback_perm(last_runtime)
 
     def __len__(self):
-        return len(self.feedback_perm)
+        return len(self.feedback_perm) if self.feedback_perm is not None else 0
 
     def _load_feedback_perm(self, after_time: Optional[datetime]) -> Permutation | None:
         if after_time is None:
