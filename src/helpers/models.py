@@ -173,7 +173,7 @@ def tune_user_model(
 
     logger.info("Training start")
 
-    for epoch in tqdm(range(int(epochs * FINE_TUNING_SHRINK_FACTOR))):
+    for epoch in tqdm(range(round(epochs * FINE_TUNING_SHRINK_FACTOR))):
         total_training_loss = 0
 
         logger.info("Epoch %s", epoch)
@@ -207,7 +207,7 @@ def tune_user_model(
         else:
             not_lose_streak += 1
 
-        if 0 < early_stop <= not_lose_streak:
+        if 0 < early_stop * FINE_TUNING_SHRINK_FACTOR <= not_lose_streak:
             logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
             break;
 
