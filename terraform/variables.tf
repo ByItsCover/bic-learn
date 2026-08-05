@@ -73,6 +73,11 @@ variable "full_train_frequency" {
   description = "The cron schedule frequency at which the full train job should run"
 }
 
+variable "tune_users_frequency" {
+  type        = string
+  description = "The cron schedule frequency at which the tune users job should run"
+}
+
 variable "scheduler_arn" {
   type        = string
   description = "Target ARN for EventBridge scheduler"
