@@ -1,6 +1,6 @@
 locals {
   ecs_execution_role_arn = data.terraform_remote_state.bic_infra.outputs.ecs_execution_role_arn
-  job_role_arn = data.terraform_remote_state.bic_infra.outputs.job_role_arn
+  job_role_arn           = data.terraform_remote_state.bic_infra.outputs.job_role_arn
   s3_db_uri              = data.terraform_remote_state.bic_infra.outputs.s3_db_uri
   hardcover_secret_arn   = data.terraform_remote_state.bic_infra.outputs.hardcover_secret_arn
   rec_efs_system_id      = data.terraform_remote_state.bic_infra.outputs.rec_efs_system_id
