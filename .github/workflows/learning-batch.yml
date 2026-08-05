@@ -10,7 +10,7 @@ on:
       jobType:
         description: 'Learning Job Type'
         required: true
-        default: 'full_train'
+        default: 'tune_users'
         type: choice
         options:
           - full_train
@@ -43,7 +43,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
 
       - name: Submit Training Job
-        if: ${{ inputs.jobType == 'full_train' || inputs.jobType == 'tune_users' }}
+        if: ${{ inputs.jobType == 'tune_users' || inputs.jobType == 'full_train' }}
         run: |
           aws batch submit-job \
               --job-name ${{ inputs.jobName }}-${{ github.run_id }} \
