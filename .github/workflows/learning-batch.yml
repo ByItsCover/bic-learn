@@ -42,7 +42,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
 
-      - name: Submit Full Train Job
+      - name: Submit Training Job
         if: ${{ inputs.jobType == 'full_train' || inputs.jobType == 'tune_users' }}
         run: |
           aws batch submit-job \

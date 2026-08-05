@@ -90,7 +90,7 @@ class FeedbackDataSet(Dataset):
 
         permutation_tbl = (
             permutation_builder(self.feedback_table)
-            .filter(f"timestamp >= timestamp {after_time.strftime('%Y-%m-%d %H:%M:%S')}'")
+            .filter(f"timestamp >= timestamp '{after_time.strftime('%Y-%m-%d %H:%M:%S')}'")
             .execute()
         )
         return (
