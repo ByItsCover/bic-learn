@@ -81,7 +81,7 @@ class FeedbackDataSet(Dataset):
     def __len__(self):
         return len(self.feedback_perm)
 
-    def _load_feedback_perm(self, after_time: Optional[datetime]) -> Permutation:
+    def _load_feedback_perm(self, after_time: Optional[datetime]) -> Permutation | None:
         if after_time is None:
             return (
                 Permutation.identity(self.feedback_table)
@@ -96,9 +96,12 @@ class FeedbackDataSet(Dataset):
         return (
             Permutation.from_tables(self.feedback_table, permutation_tbl)
             .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
-        )
+        ) if len(permutation_tbl) > 0 else None
 
     def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+        if self.feedback_perm is None:
+            raise ValueError("No items for permutation")
+
         feedback = self.feedback_perm.__getitem__(idx)[0]
         user = (
             self.user_table.search()
