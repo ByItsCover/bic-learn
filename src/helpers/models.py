@@ -10,7 +10,7 @@ from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
                               ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
                               MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT,
                               HIDDEN_DIM, DROPOUT, DEFAULT_USER_OFFSET,
-                              FINE_TUNING_SHRINK_FACTOR)
+                              TUNING_LR_SHRINK, TUNING_PATIENCE_SHRINK, ITEM_WEIGHT_GROW)
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -99,8 +99,21 @@ def train_all_models(
         user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
         epochs: int, early_stop: int, user_lr: float, item_lr: float
 ):
+    base_params = []
+    weight_params = []
+    for name, param in item_tower.named_parameters():
+        if name.endswith("_weight"):
+            weight_params.append(param)
+        else:
+            base_params.append(param)
+
     user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
-    item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr)
+    item_optimizer = torch.optim.Adam([
+        {'params': base_params},
+        {'params': weight_params, 'lr': item_lr * ITEM_WEIGHT_GROW}
+    ], lr=item_lr)
+    #user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
+    #item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr)
     user_tower.train()
     item_tower.train()
 
@@ -160,7 +173,7 @@ def tune_user_model(
         user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
         epochs: int, early_stop: int, user_lr: float
 ) -> list[int]:
-    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr * FINE_TUNING_SHRINK_FACTOR)
+    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr * TUNING_LR_SHRINK)
     user_tower.train()
     item_tower.eval()
 
@@ -173,7 +186,7 @@ def tune_user_model(
 
     logger.info("Training start")
 
-    for epoch in tqdm(range(round(epochs * FINE_TUNING_SHRINK_FACTOR))):
+    for epoch in tqdm(range(round(epochs * TUNING_LR_SHRINK))):
         total_training_loss = 0
 
         logger.info("Epoch %s", epoch)
@@ -207,7 +220,7 @@ def tune_user_model(
         else:
             not_lose_streak += 1
 
-        if 0 < early_stop * FINE_TUNING_SHRINK_FACTOR <= not_lose_streak:
+        if 0 < early_stop * TUNING_PATIENCE_SHRINK <= not_lose_streak:
             logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
             break;
 
