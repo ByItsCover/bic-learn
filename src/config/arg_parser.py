@@ -29,7 +29,7 @@ def parse_args(args) -> argparse.Namespace:
     parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=0.001)
     parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=0.05)
 
-    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=20)
-    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=20)
+    parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=25)
+    parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=25)
 
     return parser.parse_args(args)
