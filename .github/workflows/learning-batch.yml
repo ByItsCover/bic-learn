@@ -14,6 +14,7 @@ on:
         type: choice
         options:
           - full_train
+          - tune_users
           - create_tables
       memory:
         description: 'Memory size for Learning Job'
@@ -42,7 +43,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_GITHUB_ROLE }}
 
       - name: Submit Full Train Job
-        if: ${{ inputs.jobType == 'full_train' }}
+        if: ${{ inputs.jobType == 'full_train' || inputs.jobType == 'tune_users' }}
         run: |
           aws batch submit-job \
               --job-name ${{ inputs.jobName }}-${{ github.run_id }} \

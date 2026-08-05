@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 from config.arg_parser import parse_args, Environments, JobType
 from jobs.full_train import full_train
+from jobs.tune_users import tune_users
 from jobs.create_tables import create_tables
 
 load_dotenv()
@@ -32,6 +33,11 @@ if __name__ == '__main__':
             params.hardcover_token, params.model_root_dir, params.epochs,
             params.early_stop, params.batch_size, params.shuffle, params.user_lr,
             params.item_lr, params.popular_count, params.trending_count
+        ))
+    elif params.job_type == JobType.tune_users:
+        loop.run_until_complete(tune_users(
+            params.db_uri, params.model_root_dir, params.epochs,
+            params.early_stop, params.batch_size, params.shuffle, params.user_lr
         ))
     elif params.job_type == JobType.create_tables:
         loop.run_until_complete(create_tables(params.db_uri))
