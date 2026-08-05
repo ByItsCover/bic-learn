@@ -173,7 +173,7 @@ def tune_user_model(
 
     logger.info("Training start")
 
-    for epoch in tqdm(range(epochs)):
+    for epoch in tqdm(range(round(epochs * FINE_TUNING_SHRINK_FACTOR))):
         total_training_loss = 0
 
         logger.info("Epoch %s", epoch)
@@ -207,7 +207,7 @@ def tune_user_model(
         else:
             not_lose_streak += 1
 
-        if 0 < early_stop <= not_lose_streak:
+        if 0 < early_stop * FINE_TUNING_SHRINK_FACTOR <= not_lose_streak:
             logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
             break;
 
@@ -238,7 +238,7 @@ def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tow
 
     if item_tower is not None:
         item_tower.eval()
-        
+
         item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
         item_id_input_tensor = torch.ones(2, dtype=torch.int32)
         item_tower_onnx_path = os.path.join(model_dir, "item_tower.onnx")
