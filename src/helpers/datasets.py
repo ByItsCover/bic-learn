@@ -4,9 +4,11 @@ from torch.utils.data import Dataset
 from lancedb import Table
 from lancedb.permutation import Permutation, permutation_builder
 from lancedb.pydantic import LanceModel, Vector
+from datetime import datetime
+from typing import Optional
 from helpers.hardcover import CoverRecord
 from helpers.feedback_ops import FeedbackMap
-from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM
+from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM, DEFAULT_USER_OFFSET
 
 
 class CoverBackdate(LanceModel):
@@ -64,7 +66,7 @@ class HotCoversDataSet(Dataset):
 class FeedbackDataSet(Dataset):
     def __init__(
             self, feedback_table: Table, user_table: Table,
-            cover_table: Table, uid_field: str = "user_id", cid_field: str = "cover_id",
+            cover_table: Table, last_runtime: Optional[datetime] = None, uid_field: str = "user_id", cid_field: str = "cover_id",
             embedding_field: str = "cover_embedding", row_field: str = "_rowid"
         ):
         self.feedback_table = feedback_table
@@ -74,14 +76,25 @@ class FeedbackDataSet(Dataset):
         self.cid_field = cid_field
         self.embedding_field = embedding_field
         self.row_field = row_field
-        self.feedback_perm = self._load_feedback_perm()
+        self.feedback_perm = self._load_feedback_perm(last_runtime)
 
     def __len__(self):
         return len(self.feedback_perm)
 
-    def _load_feedback_perm(self) -> Permutation:
+    def _load_feedback_perm(self, after_time: Optional[datetime]) -> Permutation:
+        if after_time is None:
+            return (
+                Permutation.identity(self.feedback_table)
+                .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
+            )
+
+        permutation_tbl = (
+            permutation_builder(self.feedback_table)
+            .filter(f"timestamp >= timestamp {after_time.strftime('%Y-%m-%d %H:%M:%S')}'")
+            .execute()
+        )
         return (
-            Permutation.identity(self.feedback_table)
+            Permutation.from_tables(self.feedback_table, permutation_tbl)
             .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
         )
 
@@ -101,7 +114,7 @@ class FeedbackDataSet(Dataset):
             .limit(1)
         ).to_pydantic(CoverBackdate)[0]
 
-        user_id_arr = torch.tensor(user["_rowid"] + 1)
+        user_id_arr = torch.tensor(user["_rowid"] + DEFAULT_USER_OFFSET)
         item_arr = torch.tensor(cover.cover_embedding)
         item_id_arr = torch.tensor(cover.cover_id)
         rating_arr = torch.tensor([feedback["score"]])

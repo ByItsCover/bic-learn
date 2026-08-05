@@ -8,7 +8,7 @@ import logging
 from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
                               ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
                               MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT,
-                              HIDDEN_DIM, DROPOUT)
+                              HIDDEN_DIM, DROPOUT, DEFAULT_USER_OFFSET)
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ class ItemTower(torch.nn.Module):
         out = self.tower(x)
         return out
 
-def train_models(
+def train_all_models(
         user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
         epochs: int, early_stop: int, user_lr: float, item_lr: float
 ):
@@ -154,6 +154,61 @@ def train_models(
 
     logger.info("Training end")
 
+def tune_user_model(
+        user_tower: UserTower, item_tower: ItemTower, dataloader: DataLoader,
+        epochs: int, early_stop: int, user_lr: float
+) -> list[int]:
+    user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
+    user_tower.train()
+    item_tower.eval()
+
+    unique_ids = set()
+    best_loss = None
+    not_lose_streak = 0
+
+    logger.info("Training start")
+
+    for epoch in tqdm(range(epochs)):
+        total_training_loss = 0
+
+        logger.info("Epoch %s", epoch)
+        for batch_ind, batch in enumerate(tqdm(dataloader)):
+            user_id, item, item_id, rating, min_rating, max_rating = batch
+            user_optimizer.zero_grad()
+            user_pred = user_tower(user_id)
+            item_pred = item_tower(item, item_id)
+
+            ratings_pred = ((min_rating + 1
+                             + F.cosine_similarity(
+                                normalize(user_pred),
+                                normalize(item_pred), dim=-1
+                            ).unsqueeze(0).T)
+                            * (max_rating / 2))
+
+            loss = torch.square(rating - ratings_pred).mean()
+            logger.info("Batch %s loss: %s", batch_ind, loss.item())
+
+            loss.backward()
+            user_optimizer.step()
+            total_training_loss += loss.item()
+            unique_ids |= set((user_id - DEFAULT_USER_OFFSET).tolist())
+
+        avg_training_loss = total_training_loss / len(dataloader)
+        logger.info("Average loss for epoch %s: %s", epoch, avg_training_loss)
+
+        if best_loss is None or avg_training_loss < best_loss:
+            not_lose_streak = 0
+            best_loss = avg_training_loss
+        else:
+            not_lose_streak += 1
+
+        if 0 < early_stop <= not_lose_streak:
+            logger.info("Accuracy has not improved in %s rounds. Stopping early...", not_lose_streak)
+            break;
+
+    logger.info("Training end. %s Users trained for", len(unique_ids))
+    return list(unique_ids)
+
 def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     if not os.path.exists(model_dir):
         raise FileNotFoundError(f"No such directory: {model_dir}")
@@ -162,24 +217,27 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
     item_tower.eval()
 
     user_input_tensor = torch.ones(2, dtype=torch.int32)
-    user_tower_path = os.path.join(model_dir, "user_tower.onnx")
+    user_tower_onnx_path = os.path.join(model_dir, "user_tower.onnx")
     torch.onnx.export(
         user_tower,
         (user_input_tensor),
-        user_tower_path,
+        user_tower_onnx_path,
         input_names=['users'],
         output_names=['embeddings'],
         dynamic_shapes=({0: torch.export.Dim.DYNAMIC},),
         external_data=False
     )
 
+    user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
+    torch.save(user_tower.state_dict(), user_tower_torch_path)
+
     item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
     item_id_input_tensor = torch.ones(2, dtype=torch.int32)
-    item_tower_path = os.path.join(model_dir, "item_tower.onnx")
+    item_tower_onnx_path = os.path.join(model_dir, "item_tower.onnx")
     torch.onnx.export(
         item_tower,
         (item_input_tensor, item_id_input_tensor),
-        item_tower_path,
+        item_tower_onnx_path,
         input_names=['items', 'ids'],
         output_names=['embeddings'],
         dynamic_shapes=(
@@ -188,3 +246,17 @@ def save_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
         ),
         external_data=False
     )
+
+    item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
+    torch.save(item_tower.state_dict(), item_tower_torch_path)
+
+def load_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
+    user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
+    item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
+
+    if not (os.path.isfile(user_tower_torch_path) and os.path.isfile(item_tower_torch_path)):
+        logger.warning("Torch models have not been saved. Training job likely hasn't run yet.")
+        return;
+
+    user_tower.load_state_dict(torch.load(user_tower_torch_path, weights_only=True))
+    item_tower.load_state_dict(torch.load(item_tower_torch_path, weights_only=True))

@@ -6,9 +6,13 @@ from lancedb.index import BTree
 from lancedb.pydantic import LanceModel, Vector
 from pydantic import PlainSerializer, TypeAdapter
 import pyarrow as pa
-from typing import Optional, Annotated
+from enum import Enum
 import uuid
-from config.constants import TOWER_DIM, CLIP_DIM, COVER_TABLE_NAME, USER_TABLE_NAME, FEEDBACK_TABLE_NAME
+from datetime import datetime
+from typing import Optional, Annotated
+from config.constants import (TOWER_DIM, CLIP_DIM,
+                              COVER_TABLE_NAME, USER_TABLE_NAME,
+                              FEEDBACK_TABLE_NAME, RUNLOG_TABLE_NAME)
 
 
 class Cover(LanceModel):
@@ -24,6 +28,15 @@ class User(LanceModel):
     tower_embedding: Optional[Vector(TOWER_DIM)] = None  # pyright: ignore[reportInvalidTypeForm, reportInvalidTypeArguments]
 
 users_adapter = TypeAdapter(list[User])
+
+class RunlogEnum(str, Enum):
+    learn_job = 'learn_job'
+
+class Runlog(LanceModel):
+    type: RunlogEnum
+    last_run: datetime
+
+runlog_adapter = TypeAdapter(list[Runlog])
 
 
 async def get_db(uri: str) -> DBConnection:
@@ -107,3 +120,25 @@ def get_feedback_table_sync(db: DBConnection) -> Table:
         feedback_table.create_index("type", config=BTree(), name="type_idx")
 
     return feedback_table
+
+async def get_runlog_table(db: DBConnection) -> Table:
+    return await asyncio.to_thread(get_runlog_table_sync, db)
+
+def get_runlog_table_sync(db: DBConnection) -> Table:
+    runlog_schema = pa.schema(
+        [
+            pa.field("type", pa.string(), nullable=False),
+            pa.field("last_run", pa.timestamp('us'), nullable=False),
+        ]
+    )
+    runlog_table = db.create_table(
+        RUNLOG_TABLE_NAME,
+        schema=runlog_schema,
+        exist_ok=True,
+    )
+
+    type_stats = runlog_table.index_stats("type_idx")
+    if not type_stats:
+        runlog_table.create_index("type", config=BTree(), name="type_idx")
+
+    return runlog_table
