@@ -8,9 +8,10 @@ import os
 import logging
 from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
                               ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
-                              MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT,
-                              HIDDEN_DIM, DROPOUT, DEFAULT_USER_OFFSET,
-                              TUNING_LR_SHRINK, TUNING_PATIENCE_SHRINK, ITEM_WEIGHT_GROW)
+                              MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM,
+                              USER_DROPOUT, ITEM_DROPOUT, DEFAULT_USER_OFFSET,
+                              TUNING_LR_SHRINK, TUNING_PATIENCE_SHRINK,
+                              ITEM_WEIGHT_GROW)
 from helpers.tensor_ops import normalize
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class UserTower(torch.nn.Module):
     def __init__(
             self, output_dim: int = TOWER_DIM, max_item_count: int = MAX_ITEM_COUNT,
             id_bucket_count: int = ITEM_ID_BUCKET_COUNT, hidden_dim: int = HIDDEN_DIM,
-            dropout: float = DROPOUT
+            dropout: float = USER_DROPOUT
     ):
         super().__init__()
         self.id_bucket_count = id_bucket_count
@@ -53,7 +54,7 @@ class ItemTower(torch.nn.Module):
             id_weight_init: float = ID_WEIGHT_INIT,
             max_item_count: int = MAX_ITEM_COUNT,
             id_bucket_count: int = ITEM_ID_BUCKET_COUNT,
-            hidden_dim: int = HIDDEN_DIM, dropout: float = DROPOUT
+            hidden_dim: int = HIDDEN_DIM, dropout: float = ITEM_DROPOUT
     ):
         super().__init__()
         self.features_layer = nn.Sequential(
