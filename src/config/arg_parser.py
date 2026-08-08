@@ -26,8 +26,8 @@ def parse_args(args) -> argparse.Namespace:
     parser.add_argument('--batch_size', action=EnvDefault, envvar='BATCH_SIZE', type=int, default=256)
     parser.add_argument('--shuffle', action=EnvDefault, envvar='SHUFFLE', type=bool, default=True)
     parser.add_argument('--early_stop', action=EnvDefault, envvar='EARLY_STOP', type=int, default=7)
-    parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=1e-3)
-    parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=1e-3)
+    parser.add_argument('--user_lr', action=EnvDefault, envvar='USER_LR', type=float, default=5e-4)
+    parser.add_argument('--item_lr', action=EnvDefault, envvar='ITEM_LR', type=float, default=5e-4)
 
     parser.add_argument('--popular_count', action=EnvDefault, envvar='POPULAR_COUNT', type=int, default=25)
     parser.add_argument('--trending_count', action=EnvDefault, envvar='TRENDING_COUNT', type=int, default=25)
