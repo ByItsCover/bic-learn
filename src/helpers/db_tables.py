@@ -90,6 +90,10 @@ def get_user_table_sync(db: DBConnection) -> Table:
     if not id_stats:
         user_table.create_index("user_id", config=BTree(), name="user_id_idx")
 
+    # Deleting all items temporarily
+    delete_res = user_table.delete("true")
+    print("Delete res:", delete_res)
+
     return user_table
 
 async def get_feedback_table(db: DBConnection) -> Table:
@@ -118,6 +122,10 @@ def get_feedback_table_sync(db: DBConnection) -> Table:
         feedback_table.create_index("user_id", config=BTree(), name="user_id_idx")
         feedback_table.create_index("cover_id", config=BTree(), name="cover_id_idx")
         feedback_table.create_index("type", config=BTree(), name="type_idx")
+
+    # Deleting all items temporarily
+    delete_res = feedback_table.delete("true")
+    print("Delete res:", delete_res)
 
     return feedback_table
 
