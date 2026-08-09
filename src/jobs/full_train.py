@@ -58,7 +58,7 @@ async def full_train(
         logger.warning("Exception loading feedback dataset: %s", e)
     
 
-    if len(feedback_dataset) == 0:
+    if feedback_len == 0:
         logger.warning("No feedback existing in database yet. Training only default user.")
         full_dataset = hot_dataset
     else:
