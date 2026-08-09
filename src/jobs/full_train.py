@@ -49,7 +49,14 @@ async def full_train(
     hot_dataset = HotCoversDataSet(cover_table, covers_map=hot_covers_map)
     user_table = await user_table_task
     feedback_table = await feedback_table_task
-    feedback_dataset = FeedbackDataSet(feedback_table, user_table, cover_table)
+
+    feedback_len = 0
+    try:
+        feedback_dataset = FeedbackDataSet(feedback_table, user_table, cover_table)
+        feedback_len = len(feedback_dataset)
+    except Exception as e:
+        logger.warning("Exception loading feedback dataset: %s", e)
+    
 
     if len(feedback_dataset) == 0:
         logger.warning("No feedback existing in database yet. Training only default user.")
