@@ -1,7 +1,7 @@
-HARDCOVER_URL = "https://api.hardcover.app/v1/graphql"
 COVER_TABLE_NAME = "covers"
 USER_TABLE_NAME = "users"
 FEEDBACK_TABLE_NAME = "feedback"
+HOT_COVERS_TABLE_NAME = "hot_covers"
 RUNLOG_TABLE_NAME = "runlog"
 TOWER_DIM = 128
 CLIP_DIM = 512
@@ -17,4 +17,3 @@ HIDDEN_DIM = 256
 USER_DROPOUT = 0.3
 ITEM_DROPOUT = 0.1
 DEFAULT_USER_OFFSET = 1
-HOT_FEEDBACK_TYPE = "Rating"

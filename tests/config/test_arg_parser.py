@@ -8,7 +8,6 @@ def test_parse_args(monkeypatch):
     monkeypatch.setenv('ENVIRONMENT', 'Development')
     monkeypatch.setenv('JOB_TYPE', 'full_train')
     monkeypatch.setenv('DB_URI', 'cover_lancedb')
-    monkeypatch.setenv('EMBED_LAMBDA_NAME', 'embed_lambda')
     monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
 
     params = parse_args([])
@@ -22,7 +21,6 @@ def test_parse_args_type_exception(monkeypatch):
     monkeypatch.setenv('ENVIRONMENT', 'Development')
     monkeypatch.setenv('JOB_TYPE', 'random_job')
     monkeypatch.setenv('DB_URI', 'cover_lancedb')
-    monkeypatch.setenv('EMBED_LAMBDA_NAME', 'embed_lambda')
     monkeypatch.setenv('MODEL_ROOT_DIR', 'model_path/')
 
     with pytest.raises(SystemExit) as excinfo:
@@ -62,7 +60,7 @@ def test_parse_args_type_exception(monkeypatch):
 
     # Integer type missmatch
     monkeypatch.setenv('USER_LR', '0.001')
-    monkeypatch.setenv('POPULAR_COUNT', '3.14')
+    monkeypatch.setenv('EARLY_STOP', '3.14')
 
     with pytest.raises(SystemExit) as excinfo:
         _ = parse_args([])
