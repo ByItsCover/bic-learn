@@ -82,6 +82,15 @@ resource "aws_batch_job_definition" "job" {
     ]
   })
 
+  retry_strategy {
+    attempts = var.retry_attempts
+
+    evaluate_on_exit {
+      action           = "retry"
+      on_status_reason = "Host EC2*"
+    }
+  }
+
   timeout {
     attempt_duration_seconds = var.max_duration
   }
