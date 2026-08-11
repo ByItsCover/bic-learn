@@ -49,6 +49,12 @@ variable "batch_gpus" {
   default     = 1
 }
 
+variable "retry_attempts" {
+  type        = number
+  description = "Number of times batch job should retry when failed/terminated"
+  default     = 2
+}
+
 variable "embed_lambda_name" {
   type        = string
   description = "Name of Embed Server Lambda Function"
