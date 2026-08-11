@@ -77,21 +77,24 @@ class FeedbackDataSet(Dataset):
         return len(self.feedback_perm) if self.feedback_perm is not None else 0
 
     def _load_feedback_perm(self, after_time: Optional[datetime]) -> Permutation | None:
-        if after_time is None:
+        try:
+            if after_time is None:
+                return (
+                    Permutation.identity(self.feedback_table)
+                    .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
+                )
+
+            permutation_tbl = (
+                permutation_builder(self.feedback_table)
+                .filter(f"timestamp >= timestamp '{after_time.strftime('%Y-%m-%d %H:%M:%S')}'")
+                .execute()
+            )
             return (
-                Permutation.identity(self.feedback_table)
+                Permutation.from_tables(self.feedback_table, permutation_tbl)
                 .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
             )
-
-        permutation_tbl = (
-            permutation_builder(self.feedback_table)
-            .filter(f"timestamp >= timestamp '{after_time.strftime('%Y-%m-%d %H:%M:%S')}'")
-            .execute()
-        )
-        return (
-            Permutation.from_tables(self.feedback_table, permutation_tbl)
-            .select_columns([self.uid_field, self.cid_field, "type", "score", "timestamp"])
-        ) if len(permutation_tbl) > 0 else None
+        except:
+            return None
 
     def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         if self.feedback_perm is None:
