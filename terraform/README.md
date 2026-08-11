@@ -44,6 +44,7 @@ No modules.
 | <a name="input_environment"></a> [environment](#input\_environment) | Deployment Environment | `string` | n/a | yes |
 | <a name="input_full_train_frequency"></a> [full\_train\_frequency](#input\_full\_train\_frequency) | The cron schedule frequency at which the full train job should run | `string` | n/a | yes |
 | <a name="input_max_duration"></a> [max\_duration](#input\_max\_duration) | Maximum duration for batch task, after which will be terminated | `number` | `3600` | no |
+| <a name="input_retry_attempts"></a> [retry\_attempts](#input\_retry\_attempts) | Number of times batch job should retry when failed/terminated | `number` | `2` | no |
 | <a name="input_scheduler_arn"></a> [scheduler\_arn](#input\_scheduler\_arn) | Target ARN for EventBridge scheduler | `string` | `"arn:aws:scheduler:::aws-sdk:batch:submitJob"` | no |
 | <a name="input_tfe_org_name"></a> [tfe\_org\_name](#input\_tfe\_org\_name) | Terraform Cloud organization name | `string` | `"ByItsCover"` | no |
 | <a name="input_tune_users_frequency"></a> [tune\_users\_frequency](#input\_tune\_users\_frequency) | The cron schedule frequency at which the tune users job should run | `string` | n/a | yes |
