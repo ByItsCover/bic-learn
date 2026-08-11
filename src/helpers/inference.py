@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CoverUpdate(LanceModel):
     cover_id: int
-    tower_embedding: Vector(TOWER_DIM) #pyright: ignore[reportInvalidTypeForm]
+    tower_embedding: Vector(TOWER_DIM) # type: ignore[PyTypeChecker]
 
 cover_updates_adapter = TypeAdapter(list[CoverUpdate])
 

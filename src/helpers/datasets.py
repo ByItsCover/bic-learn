@@ -6,9 +6,8 @@ from lancedb.permutation import Permutation, permutation_builder
 from lancedb.pydantic import LanceModel, Vector
 from datetime import datetime
 from typing import Optional
-from helpers.hardcover import CoverRecord
-from helpers.feedback_ops import FeedbackMap
-from config.constants import HOT_FEEDBACK_TYPE, CLIP_DIM, DEFAULT_USER_OFFSET
+from helpers.feedback_maps import FeedbackMap, HotRatingMap
+from config.constants import CLIP_DIM, DEFAULT_USER_OFFSET
 
 
 class CoverBackdate(LanceModel):
@@ -18,45 +17,41 @@ class CoverBackdate(LanceModel):
 
 class HotCoversDataSet(Dataset):
     def __init__(
-            self, cover_table: Table, covers_map: dict[int, tuple[CoverRecord, float]],
-            id_field: str = "cover_id", embedding_field: str = "cover_embedding",
-            feedback_type: str = HOT_FEEDBACK_TYPE
+            self, hot_covers_table: Table, cover_table: Table,
+            id_field: str = "cover_id", embedding_field: str = "cover_embedding"
         ):
+        self.hot_covers_table = hot_covers_table
         self.cover_table = cover_table
-        self.covers_map = covers_map
         self.id_field = id_field
         self.embedding_field = embedding_field
-        self.min_rating = FeedbackMap[feedback_type].value[0]
-        self.max_rating = FeedbackMap[feedback_type].value[1]
+        self.min_rating = FeedbackMap.Rating.value[0]
+        self.max_rating = FeedbackMap.Rating.value[1]
         self.default_user_id = 0
         self.rating_arr = torch.tensor([self.max_rating])
-        self.perm: Permutation | None = None
+        self.hot_covers_perm = self._load_hot_covers_perm()
 
     def __len__(self):
-        return len(self.covers_map)
+        return len(self.hot_covers_perm)
 
-    def _ensure_permutation(self):
-        if self.perm is None:
-            id_strings = [f'{cid}' for cid, _ in self.covers_map.items()]
-            self.cover_table.checkout_latest()
-            permutation_tbl = (
-                permutation_builder(self.cover_table)
-                .filter(f"{self.id_field} IN ({', '.join(id_strings)})")
-                .execute()
-            )
-            permutation = (
-                Permutation.from_tables(self.cover_table, permutation_tbl)
-                .select_columns([self.id_field, self.embedding_field])
-            )
-            self.perm = permutation
+    def _load_hot_covers_perm(self):
+        return (
+            Permutation.identity(self.hot_covers_table)
+            .select_columns([self.id_field, "type", "users_count"])
+        )
 
     def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
-        self._ensure_permutation()
-        cover = self.perm.__getitem__(idx)[0]
+        hot_entry = self.hot_covers_perm.__getitem__(idx)[0]
+        cover = (
+            self.cover_table.search()
+            .where(f"{self.id_field} = {hot_entry[self.id_field]}")
+            .select([self.id_field, self.embedding_field])
+            .limit(1)
+        ).to_pydantic(CoverBackdate)[0]
+
         user_id_arr = torch.tensor(self.default_user_id)
-        item_arr = torch.tensor(cover[self.embedding_field])
-        item_id_arr = torch.tensor(cover[self.id_field])
-        rating_arr = torch.tensor([self.covers_map[cover[self.id_field]][1]])
+        item_arr = torch.tensor(cover.cover_embedding)
+        item_id_arr = torch.tensor(cover.cover_id)
+        rating_arr = torch.tensor([HotRatingMap[hot_entry["type"]].value])
         min_rating_arr = torch.tensor([self.min_rating])
         max_rating_arr = torch.tensor([self.max_rating])
 
