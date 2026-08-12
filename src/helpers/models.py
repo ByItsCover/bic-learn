@@ -136,7 +136,7 @@ def train_all_models(
                                 normalize(user_pred) *
                                 normalize(item_pred),
                                 dim=-1, keepdim=True
-                            ) * (max_rating / 2))
+                            )) * (max_rating / 2))
 
             ratings_loss = torch.square(rating - ratings_pred).mean()
             weight_loss = ITEM_WEIGHT_DIFF_PENALTY * torch.abs(item_tower.features_weight - item_tower.id_weight)
