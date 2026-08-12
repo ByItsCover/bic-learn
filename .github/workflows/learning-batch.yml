@@ -10,7 +10,7 @@ on:
       jobType:
         description: 'Learning Job Type'
         required: true
-        default: 'tune_users'
+        default: 'full_train'
         type: choice
         options:
           - full_train
@@ -19,7 +19,12 @@ on:
       memory:
         description: 'Memory size for Learning Job'
         required: true
-        default: 2048
+        default: 16384
+        type: number
+      cpus:
+        description: 'VCPU count for Learning Job'
+        required: true
+        default: 4
         type: number
 
 permissions:
@@ -58,6 +63,10 @@ jobs:
                   {
                     "type": "MEMORY",
                     "value": "${{ inputs.memory }}"
+                  },
+                  {
+                    "type": "VCPU",
+                    "value": "${{ inputs.cpus }}"
                   }
                 ],
                 "environment": [
@@ -80,6 +89,10 @@ jobs:
                   {
                     "type": "MEMORY",
                     "value": "${{ inputs.memory }}"
+                  },
+                  {
+                    "type": "VCPU",
+                    "value": "${{ inputs.cpus }}"
                   }
                 ],
                 "environment": [
