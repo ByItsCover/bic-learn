@@ -29,15 +29,14 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     if params.job_type == JobType.full_train:
         loop.run_until_complete(full_train(
-            params.db_uri, params.model_root_dir, params.epochs,
-            params.early_stop, params.batch_size, params.shuffle,
-            params.user_lr, params.item_lr
+            params.device, params.db_uri, params.model_root_dir, params.epochs,
+            params.early_stop, params.batch_size, params.shuffle, params.user_lr,
+            params.item_lr
         ))
     elif params.job_type == JobType.tune_users:
         loop.run_until_complete(tune_users(
-            params.db_uri, params.model_root_dir, params.epochs,
-            params.early_stop, params.batch_size, params.shuffle,
-            params.user_lr
+            params.device, params.db_uri, params.model_root_dir, params.epochs,
+            params.early_stop, params.batch_size, params.shuffle, params.user_lr
         ))
     elif params.job_type == JobType.create_tables:
         loop.run_until_complete(create_tables(params.db_uri))
