@@ -7,7 +7,7 @@ bic_infra_workspace = "bic-infra-prod"
 
 max_duration         = 1800
 batch_vcpu           = 4
-batch_memory         = 16384
+batch_memory         = 14336
 batch_gpus           = 1
 retry_attempts       = 2
 embed_lambda_name    = "embed-server-lambda"
