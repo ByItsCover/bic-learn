@@ -19,7 +19,7 @@ on:
       memory:
         description: 'Memory size for Learning Job'
         required: true
-        default: 16384
+        default: 14336
         type: number
       cpus:
         description: 'VCPU count for Learning Job'
