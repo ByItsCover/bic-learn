@@ -19,6 +19,7 @@ def parse_args(args) -> argparse.Namespace:
     parser.add_argument('--job_type', action=EnvDefault, envvar='JOB_TYPE', type=JobType, choices=list(JobType))
     parser.add_argument('--db_uri', action=EnvDefault, envvar='DB_URI')
 
+    parser.add_argument('--device', action=EnvDefault, envvar='DEVICE', type=str, default='cuda')
     parser.add_argument('--model_root_dir', action=EnvDefault, envvar='MODEL_ROOT_DIR')
     parser.add_argument('--epochs', action=EnvDefault, envvar='EPOCHS', type=int, default=100)
     parser.add_argument('--batch_size', action=EnvDefault, envvar='BATCH_SIZE', type=int, default=256)

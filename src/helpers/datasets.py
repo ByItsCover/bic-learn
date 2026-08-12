@@ -18,7 +18,8 @@ class CoverBackdate(LanceModel):
 class HotCoversDataSet(Dataset):
     def __init__(
             self, hot_covers_table: Table, cover_table: Table,
-            id_field: str = "cover_id", embedding_field: str = "cover_embedding"
+            id_field: str = "cover_id", embedding_field: str = "cover_embedding",
+            device: str = "cuda"
         ):
         self.hot_covers_table = hot_covers_table
         self.cover_table = cover_table
@@ -27,7 +28,8 @@ class HotCoversDataSet(Dataset):
         self.min_rating = FeedbackMap.Rating.value[0]
         self.max_rating = FeedbackMap.Rating.value[1]
         self.default_user_id = 0
-        self.rating_arr = torch.tensor([self.max_rating])
+        self.device = device
+        self.rating_arr = torch.tensor([self.max_rating], device=self.device)
         self.hot_covers_perm = self._load_hot_covers_perm()
 
     def __len__(self):
@@ -48,12 +50,12 @@ class HotCoversDataSet(Dataset):
             .limit(1)
         ).to_pydantic(CoverBackdate)[0]
 
-        user_id_arr = torch.tensor(self.default_user_id)
-        item_arr = torch.tensor(cover.cover_embedding)
-        item_id_arr = torch.tensor(cover.cover_id)
-        rating_arr = torch.tensor([HotRatingMap[hot_entry["type"]].value])
-        min_rating_arr = torch.tensor([self.min_rating])
-        max_rating_arr = torch.tensor([self.max_rating])
+        user_id_arr = torch.tensor(self.default_user_id, device=self.device)
+        item_arr = torch.tensor(cover.cover_embedding, device=self.device)
+        item_id_arr = torch.tensor(cover.cover_id, device=self.device)
+        rating_arr = torch.tensor([HotRatingMap[hot_entry["type"]].value], device=self.device)
+        min_rating_arr = torch.tensor([self.min_rating], device=self.device)
+        max_rating_arr = torch.tensor([self.max_rating], device=self.device)
 
         return user_id_arr, item_arr, item_id_arr, rating_arr, min_rating_arr, max_rating_arr
 
@@ -61,8 +63,10 @@ class HotCoversDataSet(Dataset):
 class FeedbackDataSet(Dataset):
     def __init__(
             self, feedback_table: Table, user_table: Table,
-            cover_table: Table, last_runtime: Optional[datetime] = None, uid_field: str = "user_id", cid_field: str = "cover_id",
-            embedding_field: str = "cover_embedding", row_field: str = "_rowid"
+            cover_table: Table, last_runtime: Optional[datetime] = None,
+            uid_field: str = "user_id", cid_field: str = "cover_id",
+            embedding_field: str = "cover_embedding", row_field: str = "_rowid",
+            device: str = "cuda"
         ):
         self.feedback_table = feedback_table
         self.user_table = user_table
@@ -71,6 +75,7 @@ class FeedbackDataSet(Dataset):
         self.cid_field = cid_field
         self.embedding_field = embedding_field
         self.row_field = row_field
+        self.device = device
         self.feedback_perm = self._load_feedback_perm(last_runtime)
 
     def __len__(self):
@@ -115,11 +120,11 @@ class FeedbackDataSet(Dataset):
             .limit(1)
         ).to_pydantic(CoverBackdate)[0]
 
-        user_id_arr = torch.tensor(user["_rowid"] + DEFAULT_USER_OFFSET)
-        item_arr = torch.tensor(cover.cover_embedding)
-        item_id_arr = torch.tensor(cover.cover_id)
-        rating_arr = torch.tensor([feedback["score"]])
-        min_rating_arr = torch.tensor([FeedbackMap[feedback["type"]].value[0]])
-        max_rating_arr = torch.tensor([FeedbackMap[feedback["type"]].value[1]])
+        user_id_arr = torch.tensor(user["_rowid"] + DEFAULT_USER_OFFSET, device=self.device)
+        item_arr = torch.tensor(cover.cover_embedding, device=self.device)
+        item_id_arr = torch.tensor(cover.cover_id, device=self.device)
+        rating_arr = torch.tensor([feedback["score"]], device=self.device)
+        min_rating_arr = torch.tensor([FeedbackMap[feedback["type"]].value[0]], device=self.device)
+        max_rating_arr = torch.tensor([FeedbackMap[feedback["type"]].value[1]], device=self.device)
 
         return user_id_arr, item_arr, item_id_arr, rating_arr, min_rating_arr, max_rating_arr

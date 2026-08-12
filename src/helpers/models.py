@@ -113,8 +113,6 @@ def train_all_models(
         {'params': base_params},
         {'params': weight_params, 'lr': item_lr * ITEM_WEIGHT_GROW}
     ], lr=item_lr)
-    #user_optimizer = torch.optim.Adam(user_tower.parameters(), lr=user_lr)
-    #item_optimizer = torch.optim.Adam(item_tower.parameters(), lr=item_lr)
     user_tower.train()
     item_tower.train()
 
@@ -134,17 +132,16 @@ def train_all_models(
             user_pred = user_tower(user_id)
             item_pred = item_tower(item, item_id)
 
-            ratings_pred = ((min_rating + 1
-                             + F.cosine_similarity(
-                                normalize(user_pred),
-                                normalize(item_pred), dim=-1
-                            ).unsqueeze(0).T)
-                            * (max_rating / 2))
+            ratings_pred = ((min_rating + 1 + torch.sum(
+                                normalize(user_pred) *
+                                normalize(item_pred),
+                                dim=-1, keepdim=True
+                            ) * (max_rating / 2))
 
             ratings_loss = torch.square(rating - ratings_pred).mean()
             weight_loss = ITEM_WEIGHT_DIFF_PENALTY * torch.abs(item_tower.features_weight - item_tower.id_weight)
             loss = ratings_loss + weight_loss
-            logger.info("Batch %s loss: %s", batch_ind, loss.item())
+            #logger.info("Batch %s loss: %s", batch_ind, loss.item())
 
             loss.backward()
             user_optimizer.step()
