@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader, ConcatDataset
 from datetime import datetime, UTC
 import logging
-from helpers.datasets import HotCoversDataSet, FeedbackDataSet
+from helpers.datasets import HotCoversDataSet, FeedbackDataSet, collate_fn
 from helpers.db_tables import get_db, get_duckdb, get_cover_table, get_user_table, get_feedback_table, get_hot_covers_table, get_runlog_table
 from helpers.models import UserTower, ItemTower, train_all_models, save_models
 from helpers.inference import update_all_users, update_all_covers
@@ -47,7 +47,7 @@ async def full_train(
     else:
         full_dataset = ConcatDataset([hot_dataset, feedback_dataset])
 
-    dataloader = DataLoader(full_dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(full_dataset, batch_size=batch_size, collate_fn=collate_fn, shuffle=shuffle)
 
     user_tower = UserTower().to(device)
     item_tower = ItemTower().to(device)

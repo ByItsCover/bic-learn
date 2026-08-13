@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Optional
@@ -194,12 +193,11 @@ def tune_user_model(
             user_pred = user_tower(user_id)
             item_pred = item_tower(item, item_id)
 
-            ratings_pred = ((min_rating + 1
-                             + F.cosine_similarity(
-                                normalize(user_pred),
-                                normalize(item_pred), dim=-1
-                            ).unsqueeze(0).T)
-                            * (max_rating / 2))
+            ratings_pred = ((min_rating + 1 + torch.sum(
+                                normalize(user_pred) *
+                                normalize(item_pred),
+                                dim=-1, keepdim=True
+                            )) * (max_rating / 2))
 
             loss = torch.square(rating - ratings_pred).mean()
             logger.info("Batch %s loss: %s", batch_ind, loss.item())

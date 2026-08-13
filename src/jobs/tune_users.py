@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 from datetime import datetime, UTC
 import logging
-from helpers.datasets import FeedbackDataSet
+from helpers.datasets import FeedbackDataSet, collate_fn
 from helpers.db_tables import get_db, get_duckdb, get_cover_table, get_user_table, get_feedback_table, get_runlog_table
 from helpers.models import UserTower, ItemTower, tune_user_model, load_models, save_models
 from helpers.inference import update_user_list
@@ -43,7 +43,7 @@ async def tune_users(
     if len(dataset) == 0:
         logger.warning("No new feedback to fine tune on of since last run.")
     else:
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn, shuffle=shuffle)
 
         user_tower = UserTower().to(device)
         item_tower = ItemTower().to(device)
