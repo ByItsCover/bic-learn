@@ -52,9 +52,9 @@ async def get_duckdb(uri: str) -> DuckDBPyConnection:
     return await asyncio.to_thread(get_duckdb_sync, uri)
 
 def get_duckdb_sync(uri: str) -> DuckDBPyConnection:
-    conn = duckdb.connect()
+    conn = duckdb.connect(read_only=False)
     conn.execute("INSTALL lance; LOAD lance;")
-    conn.execute(f"ATTACH '{uri}' AS lance_ns (TYPE LANCE);")
+    conn.execute(f"ATTACH '{uri}' AS lance_ns (TYPE LANCE, READ_WRITE);")
     return conn
 
 async def get_cover_table(db_task: Task[DBConnection]) -> Table:
