@@ -9,6 +9,8 @@ onnxscript
 
 # Data
 lancedb
+duckdb
+polars
 
 # Hardcover
 gql[aiohttp]

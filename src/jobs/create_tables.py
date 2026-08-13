@@ -6,17 +6,15 @@ logger = logging.getLogger(__name__)
 
 
 async def create_tables(db_uri: str):
-    db_task = asyncio.create_task(get_db(db_uri))
-
-    db = await db_task
-
     logger.info("Creating/opening tables...")
 
-    cover_table_task = asyncio.create_task(get_cover_table(db))
-    user_table_task = asyncio.create_task(get_user_table(db))
-    feedback_table_task = asyncio.create_task(get_feedback_table(db))
-    hot_covers_table_task = asyncio.create_task(get_hot_covers_table(db))
-    runlog_table_task = asyncio.create_task(get_runlog_table(db))
+    db_task = asyncio.create_task(get_db(db_uri))
+
+    cover_table_task = asyncio.create_task(get_cover_table(db_task))
+    user_table_task = asyncio.create_task(get_user_table(db_task))
+    feedback_table_task = asyncio.create_task(get_feedback_table(db_task))
+    hot_covers_table_task = asyncio.create_task(get_hot_covers_table(db_task))
+    runlog_table_task = asyncio.create_task(get_runlog_table(db_task))
 
     await cover_table_task
     await user_table_task

@@ -1,9 +1,12 @@
 import asyncio
+from asyncio import Task
 import lancedb
 from lancedb import Table
 from lancedb.db import DBConnection
 from lancedb.index import BTree
 from lancedb.pydantic import LanceModel, Vector
+import duckdb
+from duckdb import DuckDBPyConnection
 from pydantic import PlainSerializer, TypeAdapter
 import pyarrow as pa
 from enum import Enum
@@ -20,7 +23,7 @@ class Cover(LanceModel):
     book_id: int
     isbn_13: str
     cover_url: str
-    cover_embedding: Vector(CLIP_DIM)  # type: ignore[PyTypeChecker]
+    cover_embedding: Vector(CLIP_DIM) # type: ignore[PyTypeChecker]
     tower_embedding: Optional[Vector(TOWER_DIM)] = None  # type: ignore[PyTypeChecker]
 
 class User(LanceModel):
@@ -45,7 +48,17 @@ async def get_db(uri: str) -> DBConnection:
 def get_db_sync(uri: str) -> DBConnection:
     return lancedb.connect(uri)
 
-async def get_cover_table(db: DBConnection) -> Table:
+async def get_duckdb(uri: str) -> DuckDBPyConnection:
+    return await asyncio.to_thread(get_duckdb_sync, uri)
+
+def get_duckdb_sync(uri: str) -> DuckDBPyConnection:
+    conn = duckdb.connect()
+    conn.execute("INSTALL lance; LOAD lance;")
+    conn.execute(f"ATTACH '{uri}' AS lance_ns (TYPE LANCE);")
+    return conn
+
+async def get_cover_table(db_task: Task[DBConnection]) -> Table:
+    db = await db_task
     return await asyncio.to_thread(get_cover_table_sync, db)
 
 def get_cover_table_sync(db: DBConnection) -> Table:
@@ -67,7 +80,8 @@ def get_cover_table_sync(db: DBConnection) -> Table:
 
     return cover_table
 
-async def get_user_table(db: DBConnection) -> Table:
+async def get_user_table(db_task: Task[DBConnection]) -> Table:
+    db = await db_task
     return await asyncio.to_thread(get_user_table_sync, db)
 
 def get_user_table_sync(db: DBConnection) -> Table:
@@ -92,7 +106,8 @@ def get_user_table_sync(db: DBConnection) -> Table:
 
     return user_table
 
-async def get_feedback_table(db: DBConnection) -> Table:
+async def get_feedback_table(db_task: Task[DBConnection]) -> Table:
+    db = await db_task
     return await asyncio.to_thread(get_feedback_table_sync, db)
 
 def get_feedback_table_sync(db: DBConnection) -> Table:
@@ -121,7 +136,8 @@ def get_feedback_table_sync(db: DBConnection) -> Table:
 
     return feedback_table
 
-async def get_hot_covers_table(db: DBConnection) -> Table:
+async def get_hot_covers_table(db_task: Task[DBConnection]) -> Table:
+    db = await db_task
     return await asyncio.to_thread(get_hot_covers_table_sync, db)
 
 def get_hot_covers_table_sync(db: DBConnection) -> Table:
@@ -146,7 +162,8 @@ def get_hot_covers_table_sync(db: DBConnection) -> Table:
 
     return hot_covers_table
 
-async def get_runlog_table(db: DBConnection) -> Table:
+async def get_runlog_table(db_task: Task[DBConnection]) -> Table:
+    db = await db_task
     return await asyncio.to_thread(get_runlog_table_sync, db)
 
 def get_runlog_table_sync(db: DBConnection) -> Table:
