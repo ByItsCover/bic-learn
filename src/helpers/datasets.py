@@ -29,7 +29,6 @@ class HotCoversDataSet(Dataset):
         self.max_rating = FeedbackMap.Rating.value[1]
         self.default_user_id = 0
         self.device = device
-        self.rating_arr = torch.tensor([self.max_rating], device=self.device)
         self.hot_covers_df = self._load_hot_covers_df()
 
     def __len__(self):

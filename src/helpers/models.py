@@ -267,13 +267,18 @@ def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tow
         item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
         torch.save(item_tower.state_dict(), item_tower_torch_path)
 
-def load_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str):
+def load_models(user_tower: UserTower, item_tower: ItemTower, model_dir: str, device: str = "cuda") -> tuple[UserTower, ItemTower]:
     user_tower_torch_path = os.path.join(model_dir, "user_tower_weights.pth")
     item_tower_torch_path = os.path.join(model_dir, "item_tower_weights.pth")
 
     if not (os.path.isfile(user_tower_torch_path) and os.path.isfile(item_tower_torch_path)):
         logger.warning("Torch models have not been saved. Training job likely hasn't run yet.")
-        return;
+        raise FileNotFoundError(f"No such file(s): {user_tower_torch_path} and/or {item_tower_torch_path}")
 
     user_tower.load_state_dict(torch.load(user_tower_torch_path, weights_only=True))
     item_tower.load_state_dict(torch.load(item_tower_torch_path, weights_only=True))
+
+    return (
+        user_tower.to(device),
+        item_tower.to(device)
+    )

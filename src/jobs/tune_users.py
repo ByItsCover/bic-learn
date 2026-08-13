@@ -45,10 +45,10 @@ async def tune_users(
     else:
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn, shuffle=shuffle)
 
-        user_tower = UserTower().to(device)
-        item_tower = ItemTower().to(device)
+        user_tower = UserTower()
+        item_tower = ItemTower()
 
-        load_models(user_tower, item_tower, model_dir)
+        (user_tower, item_tower) = load_models(user_tower, item_tower, model_dir, device=device)
         user_id_list = tune_user_model(
             user_tower, item_tower, dataloader,
             epochs, early_stop, user_lr
