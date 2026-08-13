@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, ConcatDataset
 from datetime import datetime, UTC
 import logging
 from helpers.datasets import HotCoversDataSet, FeedbackDataSet
-from helpers.db_tables import get_db, get_cover_table, get_user_table, get_feedback_table, get_hot_covers_table, get_runlog_table
+from helpers.db_tables import get_db, get_duckdb, get_cover_table, get_user_table, get_feedback_table, get_hot_covers_table, get_runlog_table
 from helpers.models import UserTower, ItemTower, train_all_models, save_models
 from helpers.inference import update_all_users, update_all_covers
 from helpers.runlog import log_run
@@ -24,20 +24,22 @@ async def full_train(
         logger.info("CUDA device name: %s", torch.cuda.get_device_name(0))
 
     db_task = asyncio.create_task(get_db(db_uri))
+    duckdb_task = asyncio.create_task(get_duckdb(db_uri))
 
-    db = await db_task
-    cover_table_task = asyncio.create_task(get_cover_table(db))
-    user_table_task = asyncio.create_task(get_user_table(db))
-    feedback_table_task = asyncio.create_task(get_feedback_table(db))
-    hot_covers_table_task = asyncio.create_task(get_hot_covers_table(db))
-    runlog_table_task = asyncio.create_task(get_runlog_table(db))
+    cover_table_task = asyncio.create_task(get_cover_table(db_task))
+    user_table_task = asyncio.create_task(get_user_table(db_task))
+    feedback_table_task = asyncio.create_task(get_feedback_table(db_task))
+    hot_covers_table_task = asyncio.create_task(get_hot_covers_table(db_task))
+    runlog_table_task = asyncio.create_task(get_runlog_table(db_task))
 
-    hot_covers = await hot_covers_table_task
+    await hot_covers_table_task
     cover_table = await cover_table_task
-    hot_dataset = HotCoversDataSet(hot_covers, cover_table, device=device)
+    duckdb = await duckdb_task
+    hot_dataset = HotCoversDataSet(duckdb, device=device)
+
     user_table = await user_table_task
-    feedback_table = await feedback_table_task
-    feedback_dataset = FeedbackDataSet(feedback_table, user_table, cover_table, device=device)
+    await feedback_table_task
+    feedback_dataset = FeedbackDataSet(duckdb, device=device)
 
     if len(feedback_dataset) == 0:
         logger.warning("No feedback existing in database yet. Training only default user.")
@@ -62,6 +64,5 @@ async def full_train(
     await update_all_covers_task
     save_models(model_dir, user_tower=user_tower, item_tower=item_tower)
 
-    runlog_table = await runlog_table_task
-    log_run_task = asyncio.create_task(log_run(runlog_table, start_time))
+    log_run_task = asyncio.create_task(log_run(runlog_table_task, start_time))
     await log_run_task

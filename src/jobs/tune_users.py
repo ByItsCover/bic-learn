@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from datetime import datetime, UTC
 import logging
 from helpers.datasets import FeedbackDataSet
-from helpers.db_tables import get_db, get_cover_table, get_user_table, get_feedback_table, get_runlog_table
+from helpers.db_tables import get_db, get_duckdb, get_cover_table, get_user_table, get_feedback_table, get_runlog_table
 from helpers.models import UserTower, ItemTower, tune_user_model, load_models, save_models
 from helpers.inference import update_user_list
 from helpers.runlog import fetch_last_run, log_run
@@ -24,21 +24,21 @@ async def tune_users(
         logger.info("CUDA device name: %s", torch.cuda.get_device_name(0))
 
     db_task = asyncio.create_task(get_db(db_uri))
+    duckdb_task = asyncio.create_task(get_duckdb(db_uri))
 
-    db = await db_task
-    cover_table_task = asyncio.create_task(get_cover_table(db))
-    user_table_task = asyncio.create_task(get_user_table(db))
-    feedback_table_task = asyncio.create_task(get_feedback_table(db))
-    runlog_table_task = asyncio.create_task(get_runlog_table(db))
+    cover_table_task = asyncio.create_task(get_cover_table(db_task))
+    user_table_task = asyncio.create_task(get_user_table(db_task))
+    feedback_table_task = asyncio.create_task(get_feedback_table(db_task))
+    runlog_table_task = asyncio.create_task(get_runlog_table(db_task))
 
-    runlog_table = await runlog_table_task
-    last_run_task = asyncio.create_task(fetch_last_run(runlog_table))
+    last_run_task = asyncio.create_task(fetch_last_run(runlog_table_task))
 
-    cover_table = await cover_table_task
+    await cover_table_task
+    await feedback_table_task
     user_table = await user_table_task
-    feedback_table = await feedback_table_task
     last_run = await last_run_task
-    dataset = FeedbackDataSet(feedback_table, user_table, cover_table, last_runtime=last_run, device=device)
+    duckdb = await duckdb_task
+    dataset = FeedbackDataSet(duckdb, last_runtime=last_run, device=device)
 
     if len(dataset) == 0:
         logger.warning("No new feedback to fine tune on of since last run.")
@@ -59,5 +59,5 @@ async def tune_users(
         await update_user_list_task
         save_models(model_dir, user_tower=user_tower)
 
-        log_run_task = asyncio.create_task(log_run(runlog_table, start_time))
+        log_run_task = asyncio.create_task(log_run(runlog_table_task, start_time))
         await log_run_task
