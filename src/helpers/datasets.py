@@ -3,8 +3,9 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from duckdb import DuckDBPyConnection
 import polars as pl
+import numpy as np
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Iterable
 from helpers.feedback_maps import FeedbackMap, feedback_dict, hot_ratings_dict
 from config.constants import HOT_COVERS_TABLE_NAME, COVER_TABLE_NAME, FEEDBACK_TABLE_NAME, USER_TABLE_NAME, DEFAULT_USER_OFFSET
 
@@ -15,6 +16,35 @@ def collate_fn(items: tuple[Tensor, Tensor]) -> tuple[Tensor, Tensor, Tensor, Te
         other_features[:, 0], embeddings, other_features[:, 1],
         other_features[:, 2], other_features[:, 3], other_features[:, 4]
     )
+
+
+class BatchConcatDataset(torch.utils.data.ConcatDataset):
+    def __init__(self, datasets: Iterable[torch.utils.data.Dataset]) -> None:
+        super().__init__(datasets)
+        self.cumulative_sizes_arr = np.array(self.cumulative_sizes)
+
+    def __getitems__(self, indices: list[int]):
+        indices_arr = np.array(indices)
+        if (-indices_arr[indices_arr < 0] > 165).any():
+            raise ValueError(
+                "absolute value of index should not exceed dataset length"
+            )
+        indices_arr[indices_arr < 0] += len(self)
+
+        dataset_indices = np.searchsorted(self.cumulative_sizes_arr, indices_arr, side="right")
+        indices_arr[dataset_indices > 0] -= self.cumulative_sizes_arr[dataset_indices[dataset_indices > 0] - 1]
+
+        res1 = np.empty(indices_arr.shape[0], dtype=object)
+        res2 = np.empty(indices_arr.shape[0], dtype=object)
+        for ind in np.unique(dataset_indices):
+            mask = dataset_indices == ind
+            (items1, items2) = self.datasets[ind].__getitems__(indices_arr[mask].tolist())
+            res1[mask] = np.fromiter(items1.unbind(dim=0), dtype=object)
+            res2[mask] = np.fromiter(items2.unbind(dim=0), dtype=object)
+        return (
+            torch.vstack(res1.tolist()),
+            torch.vstack(res2.tolist())
+        )
 
 
 class HotCoversDataSet(Dataset):

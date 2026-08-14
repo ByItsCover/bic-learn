@@ -1,9 +1,9 @@
 import asyncio
 import torch
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader
 from datetime import datetime, UTC
 import logging
-from helpers.datasets import HotCoversDataSet, FeedbackDataSet, collate_fn
+from helpers.datasets import HotCoversDataSet, FeedbackDataSet, BatchConcatDataset, collate_fn
 from helpers.db_tables import get_db, get_duckdb, get_cover_table, get_user_table, get_feedback_table, get_hot_covers_table, get_runlog_table
 from helpers.models import UserTower, ItemTower, train_all_models, save_models
 from helpers.inference import update_all_users, update_all_covers
@@ -45,7 +45,7 @@ async def full_train(
         logger.warning("No feedback existing in database yet. Training only default user.")
         full_dataset = hot_dataset
     else:
-        full_dataset = ConcatDataset([hot_dataset, feedback_dataset])
+        full_dataset = BatchConcatDataset([hot_dataset, feedback_dataset])
 
     dataloader = DataLoader(full_dataset, batch_size=batch_size, collate_fn=collate_fn, shuffle=shuffle)
 
