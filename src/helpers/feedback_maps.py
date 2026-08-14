@@ -8,5 +8,5 @@ class HotRatingMap(int, Enum):
     Popular = FeedbackMap.Rating.value[1]
     Trending = FeedbackMap.Rating.value[1]
 
-feedback_dict = {e.name: e.value for e in FeedbackMap}
-hot_ratings_dict = {h.name: h.value for h in HotRatingMap}
+feedback_dict = {k: v.value for k, v in FeedbackMap._member_map_.items()}
+hot_ratings_dict = {k: v.value for k, v in HotRatingMap._member_map_.items()}
