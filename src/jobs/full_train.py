@@ -57,8 +57,8 @@ async def full_train(
         epochs, early_stop, user_lr, item_lr
     )
 
-    update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower))
-    update_all_users_task = asyncio.create_task(update_all_users(user_table, user_tower))
+    update_all_covers_task = asyncio.create_task(update_all_covers(cover_table, item_tower, device))
+    update_all_users_task = asyncio.create_task(update_all_users(user_table, user_tower, device))
 
     await update_all_users_task
     await update_all_covers_task

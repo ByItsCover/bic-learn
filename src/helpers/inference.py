@@ -60,10 +60,10 @@ def update_all_users_sync(user_table: Table, user_tower: UserTower):
         .execute(users_adapter.dump_python(user_list))
     )
 
-async def update_user_list(user_table: Table, user_tower: UserTower, user_id_list: list[int]):
-    return await asyncio.to_thread(update_user_list_sync, user_table, user_tower, user_id_list)
+async def update_user_list(user_table: Table, user_tower: UserTower, user_id_list: list[int], device: str = "cuda"):
+    return await asyncio.to_thread(update_user_list_sync, user_table, user_tower, user_id_list, device)
 
-def update_user_list_sync(user_table: Table, user_tower: UserTower, user_id_list: list[int]):
+def update_user_list_sync(user_table: Table, user_tower: UserTower, user_id_list: list[int], device: str):
     user_tower.eval()
     user_table.checkout_latest()
 
@@ -78,7 +78,7 @@ def update_user_list_sync(user_table: Table, user_tower: UserTower, user_id_list
         user_row_ids.append(user["_rowid"] + DEFAULT_USER_OFFSET)
         users.append(user["user_id"])
 
-    user_id_tensors = torch.tensor(user_row_ids)
+    user_id_tensors = torch.tensor(user_row_ids, device=device)
     with torch.no_grad():
         user_embeddings_tensor_raw = user_tower(user_id_tensors)
         user_embeddings_tensor = normalize(user_embeddings_tensor_raw)
@@ -97,10 +97,10 @@ def update_user_list_sync(user_table: Table, user_tower: UserTower, user_id_list
         .execute(users_adapter.dump_python(user_list))
     )
 
-async def update_all_covers(cover_table: Table, item_tower: ItemTower):
-    return await asyncio.to_thread(update_all_covers_sync, cover_table, item_tower)
+async def update_all_covers(cover_table: Table, item_tower: ItemTower, device: str = "cuda"):
+    return await asyncio.to_thread(update_all_covers_sync, cover_table, item_tower, device)
 
-def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
+def update_all_covers_sync(cover_table: Table, item_tower: ItemTower, device: str):
     item_tower.eval()
     cover_table.checkout_latest()
 
@@ -117,8 +117,8 @@ def update_all_covers_sync(cover_table: Table, item_tower: ItemTower):
             cover_embeddings.append(cover["cover_embedding"])
             added_covers.add(cover["cover_id"])
 
-    cover_tensors = torch.vstack([torch.tensor(embed) for embed in cover_embeddings])
-    cover_id_tensors = torch.tensor(cover_ids)
+    cover_tensors = torch.vstack([torch.tensor(embed, device=device) for embed in cover_embeddings])
+    cover_id_tensors = torch.tensor(cover_ids, device=device)
     with torch.no_grad():
         tower_embeddings_tensor_raw = item_tower(cover_tensors, cover_id_tensors)
         tower_embeddings_tensor = normalize(tower_embeddings_tensor_raw)
