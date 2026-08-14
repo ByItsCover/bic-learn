@@ -25,7 +25,7 @@ class BatchConcatDataset(torch.utils.data.ConcatDataset):
 
     def __getitems__(self, indices: list[int]):
         indices_arr = np.array(indices)
-        if (-indices_arr[indices_arr < 0] > 165).any():
+        if (-indices_arr[indices_arr < 0] > len(self)).any():
             raise ValueError(
                 "absolute value of index should not exceed dataset length"
             )
