@@ -62,7 +62,7 @@ async def full_train(
 
     await update_all_users_task
     await update_all_covers_task
-    save_models(model_dir, user_tower=user_tower, item_tower=item_tower)
+    save_models(model_dir, user_tower=user_tower, item_tower=item_tower, device=device)
 
     log_run_task = asyncio.create_task(log_run(runlog_table_task, start_time))
     await log_run_task

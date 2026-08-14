@@ -223,14 +223,14 @@ def tune_user_model(
     logger.info("Training end. %s Users trained for", len(unique_ids))
     return list(unique_ids)
 
-def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tower: Optional[ItemTower] = None):
+def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tower: Optional[ItemTower] = None, device: str = "cuda"):
     if not os.path.exists(model_dir):
         raise FileNotFoundError(f"No such directory: {model_dir}")
 
     if user_tower is not None:
         user_tower.eval()
 
-        user_input_tensor = torch.ones(2, dtype=torch.int32)
+        user_input_tensor = torch.ones(2, dtype=torch.int32, device=device)
         user_tower_onnx_path = os.path.join(model_dir, "user_tower.onnx")
         torch.onnx.export(
             user_tower,
@@ -248,8 +248,8 @@ def save_models(model_dir: str, user_tower: Optional[UserTower] = None, item_tow
     if item_tower is not None:
         item_tower.eval()
 
-        item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32)
-        item_id_input_tensor = torch.ones(2, dtype=torch.int32)
+        item_input_tensor = torch.ones((2, CLIP_DIM), dtype=torch.float32, device=device)
+        item_id_input_tensor = torch.ones(2, dtype=torch.int32, device=device)
         item_tower_onnx_path = os.path.join(model_dir, "item_tower.onnx")
         torch.onnx.export(
             item_tower,
