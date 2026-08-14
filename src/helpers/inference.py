@@ -19,10 +19,10 @@ class CoverUpdate(LanceModel):
 
 cover_updates_adapter = TypeAdapter(list[CoverUpdate])
 
-async def update_all_users(user_table: Table, user_tower: UserTower):
-    return await asyncio.to_thread(update_all_users_sync, user_table, user_tower)
+async def update_all_users(user_table: Table, user_tower: UserTower, device: str = "cuda"):
+    return await asyncio.to_thread(update_all_users_sync, user_table, user_tower, device)
 
-def update_all_users_sync(user_table: Table, user_tower: UserTower):
+def update_all_users_sync(user_table: Table, user_tower: UserTower, device: str):
     user_tower.eval()
     user_table.checkout_latest()
 
@@ -41,7 +41,7 @@ def update_all_users_sync(user_table: Table, user_tower: UserTower):
         user_row_ids.append(user["_rowid"] + DEFAULT_USER_OFFSET)
         users.append(user["user_id"])
 
-    user_id_tensors = torch.tensor(user_row_ids)
+    user_id_tensors = torch.tensor(user_row_ids, device=device)
     with torch.no_grad():
         user_embeddings_tensor_raw = user_tower(user_id_tensors)
         user_embeddings_tensor = normalize(user_embeddings_tensor_raw)
