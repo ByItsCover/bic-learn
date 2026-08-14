@@ -115,11 +115,6 @@ def train_all_models(
     user_tower.train()
     item_tower.train()
 
-    for name, param in user_tower.named_parameters():
-        print(f"User tower weight {name}:", param.device)
-    for name, param in item_tower.named_parameters():
-        print(f"Item tower weight {name}:", param.device)
-
     best_loss = None
     not_lose_streak = 0
 
@@ -131,12 +126,6 @@ def train_all_models(
         logger.info("Epoch %s", epoch)
         for batch_ind, batch in enumerate(tqdm(dataloader)):
             user_id, item, item_id, rating, min_rating, max_rating = batch
-            print("user_id:", user_id.device)
-            print("item:", item.device)
-            print("item_id:", item_id.device)
-            print("rating:", rating.device)
-            print("min_rating:", min_rating.device)
-            print("max_rating:", max_rating.device)
             user_optimizer.zero_grad()
             item_optimizer.zero_grad()
             user_pred = user_tower(user_id)
@@ -152,7 +141,6 @@ def train_all_models(
             weight_loss = ITEM_WEIGHT_DIFF_PENALTY * torch.abs(item_tower.features_weight - item_tower.id_weight)
             loss = ratings_loss + weight_loss
             #logger.info("Batch %s loss: %s", batch_ind, loss.item())
-            print("loss:", loss.device)
 
             loss.backward()
             user_optimizer.step()
