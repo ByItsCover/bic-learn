@@ -6,7 +6,7 @@ from typing import Optional
 import os
 import logging
 from config.constants import (TOWER_DIM, CLIP_DIM, FEATURE_WEIGHT_INIT,
-                              ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_PENALTY,
+                              ID_WEIGHT_INIT, ITEM_WEIGHT_DIFF_SHRINK,
                               MAX_ITEM_COUNT, ITEM_ID_BUCKET_COUNT, HIDDEN_DIM,
                               USER_DROPOUT, ITEM_DROPOUT, DEFAULT_USER_OFFSET,
                               TUNING_LR_SHRINK, TUNING_PATIENCE_SHRINK,
@@ -138,7 +138,7 @@ def train_all_models(
                             )) * (max_rating / 2))
 
             ratings_loss = torch.square(rating - ratings_pred).mean()
-            weight_loss = ITEM_WEIGHT_DIFF_PENALTY * torch.abs(item_tower.features_weight - item_tower.id_weight)
+            weight_loss = item_lr * ITEM_WEIGHT_DIFF_SHRINK * torch.abs(item_tower.features_weight - item_tower.id_weight)
             loss = ratings_loss + weight_loss
             #logger.info("Batch %s loss: %s", batch_ind, loss.item())
 
